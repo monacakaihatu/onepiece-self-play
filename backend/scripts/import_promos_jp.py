@@ -4,8 +4,8 @@ JP/EN公式サイトからプロモカードを取得し、id でマージして
 実行: python -m scripts.import_promos_jp  (backend/ ディレクトリから)
 
 処理:
-  1. JP公式 → 日本語情報取得 (name_ja, effect_text_ja, 数値フィールド)
-  2. EN公式 → 英語情報取得 (name, effect_text)
+  1. JP公式 → 日本語情報取得 (name, effect_text, 数値フィールド)
+  2. EN公式 → 英語情報取得 (name_en, effect_text_en)
   3. id でマージ（JP を基底に EN で英語フィールドを補完）
   4. DB UPSERT（COALESCE で既存の非 NULL 値を保護）
 """
@@ -350,7 +350,7 @@ def _merge(jp_cards: dict[str, dict], en_cards: dict[str, dict]) -> list[dict]:
 
 async def _upsert(db: aiosqlite.Connection, cards: list[dict]) -> tuple[int, int]:
     """挿入数・更新数を返す UPSERT。
-    JP公式由来のフィールドは上書き更新し、EN補助フィールドは COALESCE で保護する。
+    取得できた値のみで NULL を埋める（既存の非 NULL 値は COALESCE で保護する）。
     """
     inserted = updated = 0
     for card in cards:
