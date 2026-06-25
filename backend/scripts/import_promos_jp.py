@@ -350,7 +350,7 @@ def _merge(jp_cards: dict[str, dict], en_cards: dict[str, dict]) -> list[dict]:
 
 async def _upsert(db: aiosqlite.Connection, cards: list[dict]) -> tuple[int, int]:
     """挿入数・更新数を返す UPSERT。
-    JP公式由来のフィールドは上書き更新し、EN補助フィールドは COALESCE で保護する。
+    取得できた値のみで NULL を埋める（既存の非 NULL 値は COALESCE で保護する）。
     """
     inserted = updated = 0
     for card in cards:
