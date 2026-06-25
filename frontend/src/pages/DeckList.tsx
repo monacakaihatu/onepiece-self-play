@@ -85,7 +85,7 @@ export function DeckList() {
             {deck.leader && (
               <img
                 src={`/image/${deck.leader.id}`}
-                alt={deck.leader.name}
+                alt={deck.leader.name ?? ''}
                 className="deck-card__img"
               />
             )}
@@ -128,7 +128,7 @@ export function DeckList() {
                   {previewDeck.leader && (
                     <img
                       src={`/image/${previewDeck.leader.id}`}
-                      alt={previewDeck.leader.name ?? previewDeck.leader.name_en}
+                      alt={previewDeck.leader.name ?? previewDeck.leader.name_en ?? ''}
                       className="deck-preview__leader-img"
                     />
                   )}
@@ -150,7 +150,7 @@ export function DeckList() {
                     <div key={card.id} className="deck-preview__row">
                       <img
                         src={`/image/${card.id}`}
-                        alt={card.name ?? card.name_en}
+                        alt={card.name ?? card.name_en ?? ''}
                         className="deck-preview__row-img"
                       />
                       <span className="deck-preview__row-name">{card.name ?? card.name_en}</span>
@@ -162,6 +162,12 @@ export function DeckList() {
                 <div className="deck-preview__footer">
                   <button
                     className="btn btn--primary"
+                    onClick={() => navigate(`/simulate/${previewDeck.id}`)}
+                  >
+                    一人回し
+                  </button>
+                  <button
+                    className="btn"
                     onClick={() => navigate(`/deck/${previewDeck.id}`)}
                   >
                     編集

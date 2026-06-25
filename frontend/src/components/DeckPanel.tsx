@@ -39,7 +39,7 @@ export function DeckPanel({
 
       {leader && (
         <div className="deck-panel__leader">
-          <img src={`/image/${leader.id}`} alt={leader.name ?? leader.name_en} />
+          <img src={`/image/${leader.id}`} alt={leader.name ?? leader.name_en ?? ''} />
           <span>{leader.name ?? leader.name_en}</span>
         </div>
       )}
@@ -60,7 +60,7 @@ export function DeckPanel({
           <div key={card.id} className="deck-card-row">
             <img
               src={`/image/${card.id}`}
-              alt={card.name ?? card.name_en}
+              alt={card.name ?? card.name_en ?? ''}
               className="deck-card-row__img"
             />
             <span className="deck-card-row__name">{card.name ?? card.name_en}</span>

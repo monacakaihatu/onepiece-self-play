@@ -192,7 +192,7 @@ export function DeckBuilder() {
           ) : (
             deckCards.map(({ card, quantity }) => (
               <div key={card.id} className="deck-strip__item" onClick={() => openCardModal(card)}>
-                <img src={`/image/${card.id}`} alt={card.name ?? card.name_en} />
+                <img src={`/image/${card.id}`} alt={card.name ?? card.name_en ?? ''} />
                 <span className="deck-strip__badge">×{quantity}</span>
               </div>
             ))
@@ -250,7 +250,7 @@ export function DeckBuilder() {
 
             <img
               src={`/image/${selectedCard.id}`}
-              alt={selectedCard.name ?? selectedCard.name_en}
+              alt={selectedCard.name ?? selectedCard.name_en ?? ''}
               className="card-add-modal__img"
             />
 
