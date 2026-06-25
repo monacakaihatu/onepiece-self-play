@@ -46,15 +46,19 @@ def _map_card(raw: dict) -> dict | None:
     image_id = raw.get("card_image_id") or card_id
     image_url = f"{IMAGE_BASE}/{image_id}.png"
 
+    name_en = _clean_text(raw.get("card_name")) or card_id
+    effect_text_en = _clean_text(raw.get("card_text"))
     return {
         "id": card_id,
-        "name": _clean_text(raw.get("card_name")) or card_id,
+        "name": name_en,          # JP インポート前の仮名（後で上書きされる）
+        "name_en": name_en,
         "cost": _safe_int(raw.get("card_cost")),
         "color": _clean_text(raw.get("card_color")),
         "category": _clean_text(card_type),
         "power": _safe_int(raw.get("card_power")),
         "counter": _safe_int(raw.get("counter_amount")),
-        "effect_text": _clean_text(raw.get("card_text")),
+        "effect_text": effect_text_en,  # JP インポート前の仮テキスト
+        "effect_text_en": effect_text_en,
         "image_url": image_url,
         "set_code": _clean_text(raw.get("set_id")),
         "sub_types": _clean_text(raw.get("sub_types")),
@@ -79,22 +83,29 @@ async def init_schema(db: aiosqlite.Connection):
     await db.execute("PRAGMA foreign_keys=ON")
     await db.execute("""
         CREATE TABLE IF NOT EXISTS cards (
-            id          TEXT PRIMARY KEY,
-            name        TEXT NOT NULL,
-            cost        INTEGER,
-            color       TEXT,
-            category    TEXT,
-            power       INTEGER,
-            counter     INTEGER,
-            effect_text TEXT,
-            image_url   TEXT,
-            set_code    TEXT,
-            sub_types   TEXT,
-            attribute   TEXT,
-            life        TEXT,
-            rarity      TEXT
+            id              TEXT PRIMARY KEY,
+            name            TEXT,
+            name_en         TEXT,
+            cost            INTEGER,
+            color           TEXT,
+            category        TEXT,
+            power           INTEGER,
+            counter         INTEGER,
+            effect_text     TEXT,
+            effect_text_en  TEXT,
+            image_url       TEXT,
+            set_code        TEXT,
+            sub_types       TEXT,
+            attribute       TEXT,
+            life            TEXT,
+            rarity          TEXT
         )
     """)
+    for col, coltype in [("name_en", "TEXT"), ("effect_text_en", "TEXT")]:
+        try:
+            await db.execute(f"ALTER TABLE cards ADD COLUMN {col} {coltype}")
+        except Exception:
+            pass
     await db.execute("""
         CREATE TABLE IF NOT EXISTS decks (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -148,14 +159,28 @@ async def main():
         inserted = 0
         for card in unique_cards:
             await db.execute(
-                """INSERT OR REPLACE INTO cards
-                   (id, name, cost, color, category, power, counter,
-                    effect_text, image_url, set_code, sub_types, attribute, life, rarity)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                """INSERT INTO cards
+                   (id, name, name_en, cost, color, category, power, counter,
+                    effect_text, effect_text_en, image_url, set_code, sub_types, attribute, life, rarity)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(id) DO UPDATE SET
+                     name_en=excluded.name_en,
+                     cost=excluded.cost,
+                     color=excluded.color,
+                     category=excluded.category,
+                     power=excluded.power,
+                     counter=excluded.counter,
+                     effect_text_en=excluded.effect_text_en,
+                     image_url=excluded.image_url,
+                     set_code=excluded.set_code,
+                     sub_types=excluded.sub_types,
+                     attribute=excluded.attribute,
+                     life=excluded.life,
+                     rarity=excluded.rarity""",
                 [
-                    card["id"], card["name"], card["cost"], card["color"],
+                    card["id"], card["name"], card["name_en"], card["cost"], card["color"],
                     card["category"], card["power"], card["counter"],
-                    card["effect_text"], card["image_url"], card["set_code"],
+                    card["effect_text"], card["effect_text_en"], card["image_url"], card["set_code"],
                     card["sub_types"], card["attribute"], card["life"], card["rarity"],
                 ],
             )

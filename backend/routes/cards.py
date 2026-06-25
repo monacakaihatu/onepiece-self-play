@@ -13,7 +13,7 @@ _SORT_MAP = {
     "cost_desc":  "cost IS NULL, cost DESC",
     "power_asc":  "power IS NULL, power ASC",
     "power_desc": "power IS NULL, power DESC",
-    "name":       "COALESCE(name_ja, name) ASC",
+    "name":       "COALESCE(name, name_en) ASC",
     "set":        "set_code IS NULL, set_code ASC, id ASC",
 }
 
@@ -28,21 +28,21 @@ def _safe_get(row, key):
 def row_to_card(row) -> Card:
     return Card(
         id=row["id"],
-        name=row["name"],
+        name=_safe_get(row, "name"),
+        name_en=_safe_get(row, "name_en"),
         cost=row["cost"],
         color=row["color"],
         category=row["category"],
         power=row["power"],
         counter=row["counter"],
-        effect_text=row["effect_text"],
+        effect_text=_safe_get(row, "effect_text"),
+        effect_text_en=_safe_get(row, "effect_text_en"),
         image_url=row["image_url"],
         set_code=row["set_code"],
         sub_types=row["sub_types"],
         attribute=row["attribute"],
         life=row["life"],
         rarity=row["rarity"],
-        name_ja=_safe_get(row, "name_ja"),
-        effect_text_ja=_safe_get(row, "effect_text_ja"),
     )
 
 
@@ -62,7 +62,7 @@ async def list_cards(
     params: list = []
 
     if q:
-        conditions.append("(name LIKE ? OR name_ja LIKE ? OR id LIKE ?)")
+        conditions.append("(name LIKE ? OR name_en LIKE ? OR id LIKE ?)")
         params += [f"%{q}%", f"%{q}%", f"%{q}%"]
 
     if color:

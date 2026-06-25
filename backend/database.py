@@ -20,32 +20,44 @@ async def init_db():
         await db.execute("PRAGMA journal_mode=WAL")
         await db.execute("PRAGMA foreign_keys=ON")
 
+        # 旧スキーマ (name_ja カラムあり) → 新スキーマへ自動マイグレーション
+        async with db.execute("PRAGMA table_info(cards)") as cur:
+            existing_cols = {row[1] for row in await cur.fetchall()}
+        if "name_ja" in existing_cols:
+            await db.execute("ALTER TABLE cards RENAME COLUMN name TO name_en")
+            await db.execute("ALTER TABLE cards RENAME COLUMN effect_text TO effect_text_en")
+            await db.execute("ALTER TABLE cards RENAME COLUMN name_ja TO name")
+            await db.execute("ALTER TABLE cards RENAME COLUMN effect_text_ja TO effect_text")
+            await db.execute(
+                "UPDATE cards SET name = COALESCE(name, name_en, id) WHERE name IS NULL"
+            )
+
         await db.execute("""
             CREATE TABLE IF NOT EXISTS cards (
                 id              TEXT PRIMARY KEY,
-                name            TEXT NOT NULL,
+                name            TEXT,
+                name_en         TEXT,
                 cost            INTEGER,
                 color           TEXT,
                 category        TEXT,
                 power           INTEGER,
                 counter         INTEGER,
                 effect_text     TEXT,
+                effect_text_en  TEXT,
                 image_url       TEXT,
                 set_code        TEXT,
                 sub_types       TEXT,
                 attribute       TEXT,
                 life            TEXT,
-                rarity          TEXT,
-                name_ja         TEXT,
-                effect_text_ja  TEXT
+                rarity          TEXT
             )
         """)
-        # 既存DBへのマイグレーション
-        for col, coltype in [("name_ja", "TEXT"), ("effect_text_ja", "TEXT")]:
+        # 新カラムが欠けている場合の補完 (既存DBで新カラムが未追加の場合)
+        for col, coltype in [("name_en", "TEXT"), ("effect_text_en", "TEXT")]:
             try:
                 await db.execute(f"ALTER TABLE cards ADD COLUMN {col} {coltype}")
             except Exception:
-                pass  # already exists
+                pass
 
         # image_url を EN → JP サイトに更新
         await db.execute(

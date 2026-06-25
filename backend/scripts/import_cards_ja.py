@@ -82,18 +82,21 @@ async def run():
     print(f"  {len(series_map)} シリーズ取得")
 
     total_updated = 0
-    skipped = 0
 
-    # JP サイトの全シリーズ + プロモページを処理する
-    # UPDATE は id 一致ベースなので DB に存在しないカードは 0 件更新となり安全。
     EXTRA_PAGES = {
-        "PROMO": "550901",  # P-* プロモカード
-        "FAMILY": "550701",  # ファミリーデッキセット
+        "PROMO": "550901",
+        "FAMILY": "550701",
     }
     all_series = {**series_map, **EXTRA_PAGES}
 
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("PRAGMA journal_mode=WAL")
+        # 新カラムが欠けている旧DBへの対応
+        for col in ("name_en", "effect_text_en"):
+            try:
+                await db.execute(f"ALTER TABLE cards ADD COLUMN {col} TEXT")
+            except Exception:
+                pass
 
         for set_code, series_id in sorted(all_series.items()):
             print(f"取得中: {set_code} (id={series_id})...", end=" ", flush=True)
@@ -106,7 +109,7 @@ async def run():
             count = 0
             for card_id, data in cards.items():
                 cur = await db.execute(
-                    "UPDATE cards SET name_ja=?, effect_text_ja=? WHERE id=? AND name_ja IS NULL",
+                    "UPDATE cards SET name=?, effect_text=? WHERE id=?",
                     [data["name_ja"], data["effect_text_ja"], card_id],
                 )
                 count += cur.rowcount

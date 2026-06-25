@@ -6,21 +6,21 @@ from datetime import datetime
 
 class Card(BaseModel):
     id: str
-    name: str
+    name: Optional[str] = None
+    name_en: Optional[str] = None
     cost: Optional[int] = None
     color: Optional[str] = None
     category: Optional[str] = None
     power: Optional[int] = None
     counter: Optional[int] = None
     effect_text: Optional[str] = None
+    effect_text_en: Optional[str] = None
     image_url: Optional[str] = None
     set_code: Optional[str] = None
     sub_types: Optional[str] = None
     attribute: Optional[str] = None
     life: Optional[str] = None
     rarity: Optional[str] = None
-    name_ja: Optional[str] = None
-    effect_text_ja: Optional[str] = None
 
 
 class DeckCardEntry(BaseModel):
