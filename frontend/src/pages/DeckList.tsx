@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Card, DeckDetail, DeckSummary } from '../types'
 import { CardGrid } from '../components/CardGrid'
+import { sortDeckCards, CATEGORY_ORDER, CATEGORY_JP } from '../utils'
 
 export function DeckList() {
   const navigate = useNavigate()
@@ -145,18 +146,30 @@ export function DeckList() {
                   </div>
                 </div>
 
-                <div className="deck-preview__cards">
-                  {previewDeck.cards.map(({ card, quantity }) => (
-                    <div key={card.id} className="deck-preview__row">
-                      <img
-                        src={`/image/${card.id}`}
-                        alt={card.name ?? card.name_en}
-                        className="deck-preview__row-img"
-                      />
-                      <span className="deck-preview__row-name">{card.name ?? card.name_en}</span>
-                      <span className="deck-preview__row-qty">×{quantity}</span>
-                    </div>
-                  ))}
+                <div className="deck-preview__body">
+                  {CATEGORY_ORDER.map((cat) => {
+                    const catCards = sortDeckCards(previewDeck.cards).filter(
+                      ({ card }) => card.category === cat,
+                    )
+                    if (catCards.length === 0) return null
+                    const catTotal = catCards.reduce((s, c) => s + c.quantity, 0)
+                    return (
+                      <div key={cat} className="deck-preview__cat-section">
+                        <div className="deck-preview__cat-title">
+                          {CATEGORY_JP[cat]}
+                          <span className="deck-preview__cat-count">{catTotal}枚</span>
+                        </div>
+                        <div className="deck-preview__cat-grid">
+                          {catCards.map(({ card, quantity }) => (
+                            <div key={card.id} className="deck-preview__tile">
+                              <img src={`/image/${card.id}`} alt={card.name ?? card.name_en} />
+                              <span className="deck-preview__tile-qty">×{quantity}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
 
                 <div className="deck-preview__footer">

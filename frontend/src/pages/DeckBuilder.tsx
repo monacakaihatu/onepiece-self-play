@@ -5,6 +5,7 @@ import type { Card, CardFilters, DeckCardItem, DeckDetail } from '../types'
 import { CardGrid } from '../components/CardGrid'
 import { SearchBar } from '../components/SearchBar'
 import { FilterPanel } from '../components/FilterPanel'
+import { sortDeckCards } from '../utils'
 
 const PAGE_SIZE = 100
 
@@ -190,7 +191,7 @@ export function DeckBuilder() {
           {deckCards.length === 0 ? (
             <span className="deck-strip__empty">下のグリッドからカードを追加してください</span>
           ) : (
-            deckCards.map(({ card, quantity }) => (
+            sortDeckCards(deckCards).map(({ card, quantity }) => (
               <div key={card.id} className="deck-strip__item" onClick={() => openCardModal(card)}>
                 <img src={`/image/${card.id}`} alt={card.name ?? card.name_en} />
                 <span className="deck-strip__badge">×{quantity}</span>
