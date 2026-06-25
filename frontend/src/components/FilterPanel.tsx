@@ -1,7 +1,7 @@
 import type { CardFilters } from '../types'
 
 const COLORS = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'Purple']
-const JP_COLORS = ['赤', '青', '緑', '黄', '黒', '紫'];
+const JP_COLORS = ['赤', '青', '緑', '黄', '黒', '紫']
 const CATEGORIES = ['Leader', 'Character', 'Event', 'Stage']
 const COSTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 

@@ -39,8 +39,8 @@ export function DeckPanel({
 
       {leader && (
         <div className="deck-panel__leader">
-          <img src={`/image/${leader.id}`} alt={leader.name_ja ?? leader.name} />
-          <span>{leader.name_ja ?? leader.name}</span>
+          <img src={`/image/${leader.id}`} alt={leader.name ?? leader.name_en} />
+          <span>{leader.name ?? leader.name_en}</span>
         </div>
       )}
 
@@ -58,8 +58,12 @@ export function DeckPanel({
         )}
         {cards.map(({ card, quantity }) => (
           <div key={card.id} className="deck-card-row">
-            <img src={`/image/${card.id}`} alt={card.name_ja ?? card.name} className="deck-card-row__img" />
-            <span className="deck-card-row__name">{card.name_ja ?? card.name}</span>
+            <img
+              src={`/image/${card.id}`}
+              alt={card.name ?? card.name_en}
+              className="deck-card-row__img"
+            />
+            <span className="deck-card-row__name">{card.name ?? card.name_en}</span>
             <div className="deck-card-row__controls">
               <button onClick={() => onQuantityChange(card.id, -1)}>－</button>
               <span>{quantity}</span>
@@ -70,11 +74,7 @@ export function DeckPanel({
       </div>
 
       <div className="deck-panel__footer">
-        <button
-          className="btn btn--primary"
-          onClick={onSave}
-          disabled={saving}
-        >
+        <button className="btn btn--primary" onClick={onSave} disabled={saving}>
           {saving ? '保存中...' : 'デッキを保存'}
         </button>
       </div>

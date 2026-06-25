@@ -9,14 +9,14 @@ import { FilterPanel } from '../components/FilterPanel'
 const PAGE_SIZE = 100
 
 const SORT_OPTIONS = [
-  { value: 'id',         label: 'カード番号↑' },
-  { value: 'id_desc',    label: 'カード番号↓' },
-  { value: 'set',        label: '弾順' },
-  { value: 'cost_asc',   label: 'コスト昇順' },
-  { value: 'cost_desc',  label: 'コスト降順' },
-  { value: 'power_asc',  label: 'パワー昇順' },
+  { value: 'id', label: 'カード番号↑' },
+  { value: 'id_desc', label: 'カード番号↓' },
+  { value: 'set', label: '弾順' },
+  { value: 'cost_asc', label: 'コスト昇順' },
+  { value: 'cost_desc', label: 'コスト降順' },
+  { value: 'power_asc', label: 'パワー昇順' },
   { value: 'power_desc', label: 'パワー降順' },
-  { value: 'name',       label: '名前順' },
+  { value: 'name', label: '名前順' },
 ]
 
 export function DeckBuilder() {
@@ -47,20 +47,17 @@ export function DeckBuilder() {
     })
   }, [deckId])
 
-  const fetchCards = useCallback(
-    async (f: CardFilters, append = false) => {
-      setLoading(true)
-      try {
-        const res = await api.getCards({ ...f, exclude_category: ['Leader'] })
-        setTotal(res.total)
-        setCards((prev) => (append ? [...prev, ...res.items] : res.items))
-        setHasMore((f.offset ?? 0) + res.items.length < res.total)
-      } finally {
-        setLoading(false)
-      }
-    },
-    [],
-  )
+  const fetchCards = useCallback(async (f: CardFilters, append = false) => {
+    setLoading(true)
+    try {
+      const res = await api.getCards({ ...f, exclude_category: ['Leader'] })
+      setTotal(res.total)
+      setCards((prev) => (append ? [...prev, ...res.items] : res.items))
+      setHasMore((f.offset ?? 0) + res.items.length < res.total)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     fetchCards({ ...filters, offset: 0 })
@@ -105,7 +102,8 @@ export function DeckBuilder() {
     setDeckCards((prev) => {
       const exists = prev.find((c) => c.card.id === selectedCard.id)
       if (pendingQty === 0) return prev.filter((c) => c.card.id !== selectedCard.id)
-      if (exists) return prev.map((c) => c.card.id === selectedCard.id ? { ...c, quantity: pendingQty } : c)
+      if (exists)
+        return prev.map((c) => (c.card.id === selectedCard.id ? { ...c, quantity: pendingQty } : c))
       return [...prev, { card: selectedCard, quantity: pendingQty }]
     })
     setSelectedCard(null)
@@ -147,8 +145,8 @@ export function DeckBuilder() {
     pendingQty === 0 && currentQtyInDeck > 0
       ? 'デッキから削除'
       : currentQtyInDeck > 0
-      ? '更新'
-      : 'デッキに追加'
+        ? '更新'
+        : 'デッキに追加'
 
   if (!deck) return <div className="loading">読み込み中...</div>
 
@@ -172,7 +170,9 @@ export function DeckBuilder() {
 
       {errors.length > 0 && (
         <ul className="deck-errors-banner">
-          {errors.map((e, i) => <li key={i}>{e}</li>)}
+          {errors.map((e, i) => (
+            <li key={i}>{e}</li>
+          ))}
         </ul>
       )}
 
@@ -191,12 +191,8 @@ export function DeckBuilder() {
             <span className="deck-strip__empty">下のグリッドからカードを追加してください</span>
           ) : (
             deckCards.map(({ card, quantity }) => (
-              <div
-                key={card.id}
-                className="deck-strip__item"
-                onClick={() => openCardModal(card)}
-              >
-                <img src={`/image/${card.id}`} alt={card.name_ja ?? card.name} />
+              <div key={card.id} className="deck-strip__item" onClick={() => openCardModal(card)}>
+                <img src={`/image/${card.id}`} alt={card.name ?? card.name_en} />
                 <span className="deck-strip__badge">×{quantity}</span>
               </div>
             ))
@@ -218,11 +214,17 @@ export function DeckBuilder() {
                 onChange={(e) => handleFilterChange({ ...filters, sort: e.target.value })}
               >
                 {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
-            <FilterPanel filters={filters} onChange={handleFilterChange} hideCategories={['Leader']} />
+            <FilterPanel
+              filters={filters}
+              onChange={handleFilterChange}
+              hideCategories={['Leader']}
+            />
           </div>
 
           <div className="card-grid-wrap">
@@ -242,38 +244,74 @@ export function DeckBuilder() {
       {selectedCard && (
         <div className="modal-overlay" onClick={() => setSelectedCard(null)}>
           <div className="modal-content card-add-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedCard(null)}>✕</button>
+            <button className="modal-close" onClick={() => setSelectedCard(null)}>
+              ✕
+            </button>
 
             <img
               src={`/image/${selectedCard.id}`}
-              alt={selectedCard.name_ja ?? selectedCard.name}
+              alt={selectedCard.name ?? selectedCard.name_en}
               className="card-add-modal__img"
             />
 
             <div className="card-add-modal__body">
               <div>
-                <h2>{selectedCard.name_ja ?? selectedCard.name}</h2>
-                {selectedCard.name_ja && (
-                  <p className="card-add-modal__name-en">{selectedCard.name}</p>
+                <h2>{selectedCard.name ?? selectedCard.name_en}</h2>
+                {selectedCard.name_en && (
+                  <p className="card-add-modal__name-en">{selectedCard.name_en}</p>
                 )}
               </div>
 
               <table>
                 <tbody>
-                  <tr><th>カード番号</th><td>{selectedCard.id}</td></tr>
-                  <tr><th>種別</th><td>{selectedCard.category}</td></tr>
-                  <tr><th>色</th><td>{selectedCard.color}</td></tr>
-                  {selectedCard.cost != null && <tr><th>コスト</th><td>{selectedCard.cost}</td></tr>}
-                  {selectedCard.power != null && <tr><th>パワー</th><td>{selectedCard.power.toLocaleString()}</td></tr>}
-                  {selectedCard.counter != null && <tr><th>カウンター</th><td>{selectedCard.counter}</td></tr>}
-                  {selectedCard.attribute && <tr><th>属性</th><td>{selectedCard.attribute}</td></tr>}
-                  {selectedCard.sub_types && <tr><th>特徴</th><td>{selectedCard.sub_types}</td></tr>}
+                  <tr>
+                    <th>カード番号</th>
+                    <td>{selectedCard.id}</td>
+                  </tr>
+                  <tr>
+                    <th>種別</th>
+                    <td>{selectedCard.category}</td>
+                  </tr>
+                  <tr>
+                    <th>色</th>
+                    <td>{selectedCard.color}</td>
+                  </tr>
+                  {selectedCard.cost != null && (
+                    <tr>
+                      <th>コスト</th>
+                      <td>{selectedCard.cost}</td>
+                    </tr>
+                  )}
+                  {selectedCard.power != null && (
+                    <tr>
+                      <th>パワー</th>
+                      <td>{selectedCard.power.toLocaleString()}</td>
+                    </tr>
+                  )}
+                  {selectedCard.counter != null && (
+                    <tr>
+                      <th>カウンター</th>
+                      <td>{selectedCard.counter}</td>
+                    </tr>
+                  )}
+                  {selectedCard.attribute && (
+                    <tr>
+                      <th>属性</th>
+                      <td>{selectedCard.attribute}</td>
+                    </tr>
+                  )}
+                  {selectedCard.sub_types && (
+                    <tr>
+                      <th>特徴</th>
+                      <td>{selectedCard.sub_types}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
-              {(selectedCard.effect_text_ja ?? selectedCard.effect_text) && (
+              {(selectedCard.effect_text ?? selectedCard.effect_text_en) && (
                 <p className="card-add-modal__effect">
-                  {selectedCard.effect_text_ja ?? selectedCard.effect_text}
+                  {selectedCard.effect_text ?? selectedCard.effect_text_en}
                 </p>
               )}
 

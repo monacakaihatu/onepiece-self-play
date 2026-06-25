@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Card, DeckDetail, DeckSummary } from '../types'
 import { CardGrid } from '../components/CardGrid'
@@ -16,7 +16,10 @@ export function DeckList() {
   const [previewLoading, setPreviewLoading] = useState(false)
 
   useEffect(() => {
-    api.getDecks().then(setDecks).finally(() => setLoading(false))
+    api
+      .getDecks()
+      .then(setDecks)
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -26,12 +29,15 @@ export function DeckList() {
       .then((r) => setLeaders(r.items))
   }, [showCreate, leaderQuery])
 
-  const handleDelete = useCallback(async (id: number) => {
-    if (!confirm('デッキを削除しますか？')) return
-    await api.deleteDeck(id)
-    setDecks((prev) => prev.filter((d) => d.id !== id))
-    if (previewDeck?.id === id) setPreviewDeck(null)
-  }, [previewDeck?.id])
+  const handleDelete = useCallback(
+    async (id: number) => {
+      if (!confirm('デッキを削除しますか？')) return
+      await api.deleteDeck(id)
+      setDecks((prev) => prev.filter((d) => d.id !== id))
+      if (previewDeck?.id === id) setPreviewDeck(null)
+    },
+    [previewDeck?.id],
+  )
 
   const handleDeckClick = useCallback(async (id: number) => {
     setPreviewLoading(true)
@@ -61,6 +67,9 @@ export function DeckList() {
     <div className="page deck-list-page">
       <header className="page__header">
         <h1>デッキ一覧</h1>
+        <Link to="/cards" className="btn btn--ghost">
+          カード一覧
+        </Link>
         <button className="btn btn--primary" onClick={() => setShowCreate(true)}>
           ＋ 新規デッキ
         </button>
@@ -74,13 +83,17 @@ export function DeckList() {
         {decks.map((deck) => (
           <div key={deck.id} className="deck-card" onClick={() => handleDeckClick(deck.id)}>
             {deck.leader && (
-              <img src={`/image/${deck.leader.id}`} alt={deck.leader.name} className="deck-card__img" />
+              <img
+                src={`/image/${deck.leader.id}`}
+                alt={deck.leader.name}
+                className="deck-card__img"
+              />
             )}
             <div className="deck-card__info">
               <h3>{deck.name}</h3>
               <span>{deck.total_cards} / 50 枚</span>
               {deck.leader && (
-                <span className="deck-card__leader">{deck.leader.name_ja ?? deck.leader.name}</span>
+                <span className="deck-card__leader">{deck.leader.name ?? deck.leader.name_en}</span>
               )}
             </div>
             <button
@@ -99,8 +112,13 @@ export function DeckList() {
       {/* デッキプレビューモーダル */}
       {(previewDeck || previewLoading) && (
         <div className="modal-overlay" onClick={() => setPreviewDeck(null)}>
-          <div className="modal-content modal-content--wide deck-preview" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setPreviewDeck(null)}>✕</button>
+          <div
+            className="modal-content modal-content--wide deck-preview"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button className="modal-close" onClick={() => setPreviewDeck(null)}>
+              ✕
+            </button>
 
             {previewLoading && <div className="loading">読み込み中...</div>}
 
@@ -110,7 +128,7 @@ export function DeckList() {
                   {previewDeck.leader && (
                     <img
                       src={`/image/${previewDeck.leader.id}`}
-                      alt={previewDeck.leader.name_ja ?? previewDeck.leader.name}
+                      alt={previewDeck.leader.name ?? previewDeck.leader.name_en}
                       className="deck-preview__leader-img"
                     />
                   )}
@@ -118,7 +136,7 @@ export function DeckList() {
                     <h2>{previewDeck.name}</h2>
                     {previewDeck.leader && (
                       <span className="deck-preview__leader-name">
-                        {previewDeck.leader.name_ja ?? previewDeck.leader.name}
+                        {previewDeck.leader.name ?? previewDeck.leader.name_en}
                       </span>
                     )}
                     <span className={previewDeck.total_cards === 50 ? 'count--ok' : 'count--ng'}>
@@ -132,10 +150,10 @@ export function DeckList() {
                     <div key={card.id} className="deck-preview__row">
                       <img
                         src={`/image/${card.id}`}
-                        alt={card.name_ja ?? card.name}
+                        alt={card.name ?? card.name_en}
                         className="deck-preview__row-img"
                       />
-                      <span className="deck-preview__row-name">{card.name_ja ?? card.name}</span>
+                      <span className="deck-preview__row-name">{card.name ?? card.name_en}</span>
                       <span className="deck-preview__row-qty">×{quantity}</span>
                     </div>
                   ))}
@@ -162,7 +180,9 @@ export function DeckList() {
       {showCreate && (
         <div className="modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="modal-content modal-content--wide" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowCreate(false)}>✕</button>
+            <button className="modal-close" onClick={() => setShowCreate(false)}>
+              ✕
+            </button>
             <h2>新規デッキ作成</h2>
             <input
               className="input"
@@ -178,10 +198,7 @@ export function DeckList() {
               onChange={(e) => setLeaderQuery(e.target.value)}
             />
             <div className="leader-grid-wrap">
-              <CardGrid
-                cards={leaders}
-                onCardClick={handleCreate}
-              />
+              <CardGrid cards={leaders} onCardClick={handleCreate} />
             </div>
           </div>
         </div>

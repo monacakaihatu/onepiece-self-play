@@ -13,9 +13,10 @@ interface Props {
   getBadge?: (card: Card) => number | undefined
   isDisabled?: (card: Card) => boolean
   onScrollEnd?: () => void
+  cols?: number
 }
 
-export function CardGrid({ cards, onCardClick, getBadge, isDisabled, onScrollEnd }: Props) {
+export function CardGrid({ cards, onCardClick, getBadge, isDisabled, onScrollEnd, cols: colsProp }: Props) {
   const parentRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
 
@@ -33,10 +34,9 @@ export function CardGrid({ cards, onCardClick, getBadge, isDisabled, onScrollEnd
     return () => ro.disconnect()
   }, [])
 
-  const cols = Math.max(1, Math.floor((containerWidth + GAP) / (MIN_CARD_W + GAP)))
-  const cardW = containerWidth > 0
-    ? Math.floor((containerWidth - GAP * (cols - 1)) / cols)
-    : MIN_CARD_W
+  const cols = colsProp ?? Math.max(1, Math.floor((containerWidth + GAP) / (MIN_CARD_W + GAP)))
+  const cardW =
+    containerWidth > 0 ? Math.floor((containerWidth - GAP * (cols - 1)) / cols) : MIN_CARD_W
   const cardH = Math.round(cardW * CARD_ASPECT)
   const rowCount = Math.ceil(cards.length / cols)
 
