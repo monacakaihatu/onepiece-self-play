@@ -4,8 +4,8 @@ JP/EN公式サイトからプロモカードを取得し、id でマージして
 実行: python -m scripts.import_promos_jp  (backend/ ディレクトリから)
 
 処理:
-  1. JP公式 → 日本語情報取得 (name_ja, effect_text_ja, 数値フィールド)
-  2. EN公式 → 英語情報取得 (name, effect_text)
+  1. JP公式 → 日本語情報取得 (name, effect_text, 数値フィールド)
+  2. EN公式 → 英語情報取得 (name_en, effect_text_en)
   3. id でマージ（JP を基底に EN で英語フィールドを補完）
   4. DB UPSERT（COALESCE で既存の非 NULL 値を保護）
 """
