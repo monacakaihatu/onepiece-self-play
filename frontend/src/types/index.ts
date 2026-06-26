@@ -55,6 +55,8 @@ export interface CardFilters {
   category?: string[]
   exclude_category?: string[]
   set_code?: string[]
+  rarity?: string[]
+  sub_types?: string
   sort?: string
   limit?: number
   offset?: number
