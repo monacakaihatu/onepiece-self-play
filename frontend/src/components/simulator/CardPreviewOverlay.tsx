@@ -8,8 +8,8 @@ export function CardPreviewOverlay() {
   const displayPower = card.power !== null ? card.power + powerMod : null
 
   return (
-    <div className="sim-preview-overlay" onClick={() => useGameStore.getState().setPreview(null)}>
-      <div className="sim-preview-inner" onClick={(e) => e.stopPropagation()}>
+    <div className="sim-preview-overlay">
+      <div className="sim-preview-inner">
         <img
           src={`/image/${card.id}`}
           alt={card.name ?? card.name_en ?? card.id}
@@ -39,8 +39,8 @@ export function CardPreviewOverlay() {
           {card.sub_types && (
             <div className="sim-preview-subtypes">{card.sub_types}</div>
           )}
-          {card.effect_text && (
-            <div className="sim-preview-effect">{card.effect_text}</div>
+          {(card.effect_text ?? card.effect_text_en) && (
+            <div className="sim-preview-effect">{card.effect_text ?? card.effect_text_en}</div>
           )}
         </div>
       </div>

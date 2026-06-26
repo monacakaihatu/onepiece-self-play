@@ -36,7 +36,7 @@ export function DonZone() {
             <div
               key={token.id}
               className={`sim-don-token ${inactive ? 'sim-don-token--available' : 'sim-don-token--used'} ${isAttached ? 'sim-don-token--attached' : ''}`}
-              title={isAttached ? '付与中' : isUsed ? '使用済み' : '使用可能'}
+              title={isAttached ? '付与中' : isUsed ? '使用可能' : '未獲得'}
             />
           )
         })}

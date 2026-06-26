@@ -6,7 +6,12 @@ const PHASES: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'battle', 'end']
 export function PhaseBar() {
   const phase = useGameStore((s) => s.phase)
   const turnNumber = useGameStore((s) => s.turnNumber)
-  const { nextPhase, undo, redo, _history, _future } = useGameStore.getState()
+  const historyLen = useGameStore((s) => s._history.length)
+  const futureLen = useGameStore((s) => s._future.length)
+  const nextPhase = useGameStore((s) => s.nextPhase)
+  const undo = useGameStore((s) => s.undo)
+  const redo = useGameStore((s) => s.redo)
+  const setPhase = useGameStore((s) => s.setPhase)
 
   const getNextLabel = () => {
     if (phase === 'end') return '次のターンへ'
@@ -23,7 +28,7 @@ export function PhaseBar() {
           <div
             key={p}
             className={`sim-phase-chip ${p === phase ? 'sim-phase-chip--active' : ''}`}
-            onClick={() => useGameStore.getState().setPhase(p)}
+            onClick={() => setPhase(p)}
             title={`${PHASE_LABELS[p]}フェーズへ移動`}
           >
             {PHASE_LABELS[p]}
@@ -34,16 +39,16 @@ export function PhaseBar() {
       <div className="sim-phase-bar__actions">
         <button
           className="btn btn--sm sim-phase-bar__undo"
-          onClick={() => undo()}
-          disabled={_history.length === 0}
+          onClick={undo}
+          disabled={historyLen === 0}
           title="元に戻す (Ctrl+Z)"
         >
           ↩
         </button>
         <button
           className="btn btn--sm sim-phase-bar__redo"
-          onClick={() => redo()}
-          disabled={_future.length === 0}
+          onClick={redo}
+          disabled={futureLen === 0}
           title="やり直し (Ctrl+Y)"
         >
           ↪

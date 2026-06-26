@@ -246,11 +246,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Determine fieldIndex for field zone
       let fieldIndex = opts.fieldIndex
       if (toZone === 'field' && fieldIndex === undefined) {
-        const usedIndices = Object.values(s.cards)
-          .filter((c) => c.zone === 'field')
-          .map((c) => c.fieldIndex ?? 0)
-        fieldIndex = 0
-        while (usedIndices.includes(fieldIndex)) fieldIndex++
+        if (card.zone === 'field') {
+          // Field-to-field reorder: preserve existing index
+          fieldIndex = card.fieldIndex
+        } else {
+          const usedIndices = Object.values(s.cards)
+            .filter((c) => c.zone === 'field')
+            .map((c) => c.fieldIndex ?? 0)
+          fieldIndex = 0
+          while (usedIndices.includes(fieldIndex)) fieldIndex++
+        }
       }
 
       // Handle lifeCards array
@@ -296,7 +301,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             zone: toZone,
             faceUp,
             fieldIndex: toZone === 'field' ? fieldIndex : undefined,
-            rested: toZone === 'field' ? false : card.rested,
+            rested: toZone === 'field' && card.zone !== 'field' ? false : card.rested,
             donAttached: isLeavingFieldOrLeader ? 0 : (toZone === 'field' || toZone === 'leader') ? card.donAttached : 0,
           },
         },
