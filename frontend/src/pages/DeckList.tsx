@@ -66,6 +66,7 @@ export function DeckList() {
   return (
     <div className="page deck-list-page">
       <header className="page__header">
+        <button className="btn btn--ghost" onClick={() => navigate('/')}>← ホーム</button>
         <h1>デッキ一覧</h1>
         <Link to="/cards" className="btn btn--ghost">
           カード一覧

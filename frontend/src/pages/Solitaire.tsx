@@ -231,7 +231,6 @@ export function Solitaire() {
   const toggleDon = useCallback((idx: number) => {
     setGs((prev) => {
       if (!prev) return prev
-      const total = prev.donActive + prev.donRested
       const isActive = idx < prev.donActive
       if (isActive) {
         return { ...prev, donActive: prev.donActive - 1, donRested: prev.donRested + 1 }

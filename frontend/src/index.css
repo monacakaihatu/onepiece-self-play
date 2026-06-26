@@ -578,7 +578,7 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .deck-strip__leader {
-  width: 28px;
+  width: 48px;
   border-radius: 3px;
 }
 .deck-strip__hint {
@@ -588,8 +588,8 @@ body {
 }
 .deck-strip__scroll {
   display: flex;
-  gap: 5px;
-  padding: 8px 14px;
+  gap: 6px;
+  padding: 10px 14px;
   overflow-x: auto;
 }
 .deck-strip__scroll::-webkit-scrollbar {
@@ -611,7 +611,7 @@ body {
   transform: scale(1.1) translateY(-2px);
 }
 .deck-strip__item img {
-  width: 48px;
+  width: 80px;
   display: block;
   aspect-ratio: 419/580;
   object-fit: cover;
@@ -1412,4 +1412,91 @@ body {
 }
 .card-action-menu button.danger {
   color: var(--danger);
+}
+
+/* --- Home Page --- */
+.home-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 48px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(245, 200, 66, 0.08) 0%, transparent 60%), var(--bg);
+  padding: 32px;
+}
+.home-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.home-header__logo {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-shadow: 0 0 32px rgba(245, 200, 66, 0.4);
+}
+.home-header__sub {
+  font-size: 14px;
+  color: var(--text2);
+  letter-spacing: 0.06em;
+}
+.home-features {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.home-feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 200px;
+  padding: 32px 20px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+  text-align: center;
+  border-top: 3px solid var(--card-accent, var(--accent));
+}
+.home-feature-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--card-accent, var(--accent));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.home-feature-card__icon {
+  font-size: 40px;
+  line-height: 1;
+}
+.home-feature-card__title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+}
+.home-feature-card__subtitle {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.home-feature-card__desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+/* --- Search Toggle --- */
+.search-toggle-btn {
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 5px 12px;
+}
+.search-toggle-btn--open {
+  border-color: var(--accent);
+  color: var(--accent);
 }

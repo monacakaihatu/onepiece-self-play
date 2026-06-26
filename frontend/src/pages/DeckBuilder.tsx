@@ -38,6 +38,7 @@ export function DeckBuilder() {
 
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [pendingQty, setPendingQty] = useState(0)
+  const [searchOpen, setSearchOpen] = useState(true)
 
   useEffect(() => {
     api.getDeck(deckId).then((d) => {
@@ -88,36 +89,7 @@ export function DeckBuilder() {
     [leaderColors],
   )
 
-  // シングルクリック → +1枚（上限4枚、色制限チェック）
-  const handleCardClick = useCallback(
-    (card: Card) => {
-      if (isDisabled(card)) return
-      setDeckCards((prev) => {
-        const existing = prev.find((c) => c.card.id === card.id)
-        if (existing) {
-          if (existing.quantity >= 4) return prev
-          return prev.map((c) =>
-            c.card.id === card.id ? { ...c, quantity: c.quantity + 1 } : c,
-          )
-        }
-        return [...prev, { card, quantity: 1 }]
-      })
-    },
-    [isDisabled],
-  )
-
-  // 右クリック → −1枚（0になれば削除）
-  const handleCardRightClick = useCallback((e: React.MouseEvent, card: Card) => {
-    e.preventDefault()
-    setDeckCards((prev) => {
-      const existing = prev.find((c) => c.card.id === card.id)
-      if (!existing) return prev
-      if (existing.quantity <= 1) return prev.filter((c) => c.card.id !== card.id)
-      return prev.map((c) => (c.card.id === card.id ? { ...c, quantity: c.quantity - 1 } : c))
-    })
-  }, [])
-
-  // ダブルクリック → 詳細モーダル
+  // クリック → 詳細モーダル
   const openCardModal = useCallback(
     (card: Card) => {
       const existing = deckCards.find((c) => c.card.id === card.id)
@@ -148,7 +120,7 @@ export function DeckBuilder() {
       if (deckName !== deck?.name) {
         await api.updateDeck(deckId, { name: deckName })
       }
-      navigate('/')
+      navigate('/decks')
     } catch (err: unknown) {
       const e = err as { detail?: { errors?: string[] } }
       if (e?.detail?.errors) {
@@ -183,7 +155,7 @@ export function DeckBuilder() {
   return (
     <div className="page deck-builder-page">
       <header className="page__header">
-        <button className="btn btn--ghost" onClick={() => navigate('/')}>
+        <button className="btn btn--ghost" onClick={() => navigate('/decks')}>
           ← 一覧へ
         </button>
         <input
@@ -215,7 +187,7 @@ export function DeckBuilder() {
           <span className={totalCards === 50 ? 'count--ok' : 'count--ng'}>
             {totalCards} / 50 枚
           </span>
-          <span className="deck-strip__hint">左クリック +1 ／ 右クリック −1 ／ ダブルクリック 詳細</span>
+          <span className="deck-strip__hint">クリックで詳細・枚数変更</span>
         </div>
         <div className="deck-strip__scroll">
           {deckCards.length === 0 ? (
@@ -228,7 +200,7 @@ export function DeckBuilder() {
                 onClick={() => openCardModal(card)}
                 title={`${card.name ?? card.name_en} ×${quantity}`}
               >
-                <img src={`/image/${card.id}`} alt={card.name ?? card.name_en} />
+                <img src={`/image/${card.id}`} alt={card.name ?? card.name_en ?? ''} />
                 <span className="deck-strip__badge">×{quantity}</span>
               </div>
             ))
@@ -255,20 +227,27 @@ export function DeckBuilder() {
                   </option>
                 ))}
               </select>
+              <button
+                className={`btn search-toggle-btn${searchOpen ? ' search-toggle-btn--open' : ''}`}
+                onClick={() => setSearchOpen((v) => !v)}
+                title={searchOpen ? '絞り込みを閉じる' : '絞り込みを開く'}
+              >
+                {searchOpen ? '▲ 絞り込み' : '▼ 絞り込み'}
+              </button>
             </div>
-            <FilterPanel
-              filters={filters}
-              onChange={handleFilterChange}
-              hideCategories={['Leader']}
-            />
+            {searchOpen && (
+              <FilterPanel
+                filters={filters}
+                onChange={handleFilterChange}
+                hideCategories={['Leader']}
+              />
+            )}
           </div>
 
           <div className="card-grid-wrap">
             <CardGrid
               cards={cards}
-              onCardClick={handleCardClick}
-              onCardDoubleClick={openCardModal}
-              onCardRightClick={handleCardRightClick}
+              onCardClick={openCardModal}
               getBadge={getBadge}
               isDisabled={isDisabled}
               onScrollEnd={handleScrollEnd}
@@ -288,7 +267,7 @@ export function DeckBuilder() {
 
             <img
               src={`/image/${selectedCard.id}`}
-              alt={selectedCard.name ?? selectedCard.name_en}
+              alt={selectedCard.name ?? selectedCard.name_en ?? ''}
               className="card-add-modal__img"
             />
 
