@@ -72,7 +72,7 @@ export function CardBrowser() {
       <header className="page__header">
         <h1>カード一覧</h1>
         <span className="card-count">{total.toLocaleString()} 件</span>
-        <button className="btn btn--ghost" onClick={() => navigate('/')}>
+        <button className="btn btn--ghost" onClick={() => navigate('/decks')}>
           デッキ一覧
         </button>
       </header>

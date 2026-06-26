@@ -66,6 +66,7 @@ export function DeckList() {
   return (
     <div className="page deck-list-page">
       <header className="page__header">
+        <button className="btn btn--ghost" onClick={() => navigate('/')}>← ホーム</button>
         <h1>デッキ一覧</h1>
         <Link to="/cards" className="btn btn--ghost">
           カード一覧
@@ -79,31 +80,40 @@ export function DeckList() {
         <p className="empty-state">デッキがまだありません。新規作成してみましょう。</p>
       )}
 
-      <div className="deck-list">
+      <div className="deck-grid">
         {decks.map((deck) => (
-          <div key={deck.id} className="deck-card" onClick={() => handleDeckClick(deck.id)}>
-            {deck.leader && (
-              <img
-                src={`/image/${deck.leader.id}`}
-                alt={deck.leader.name ?? deck.leader.name_en ?? ''}
-                className="deck-card__img"
-              />
-            )}
-            <div className="deck-card__info">
-              <h3>{deck.name}</h3>
-              <span>{deck.total_cards} / 50 枚</span>
+          <div key={deck.id} className="deck-card-tile" onClick={() => handleDeckClick(deck.id)}>
+            <div className="deck-card-tile__img-wrap">
+              {deck.leader ? (
+                <img
+                  src={`/image/${deck.leader.id}`}
+                  alt={deck.leader.name ?? deck.leader.name_en ?? ''}
+                  className="deck-card-tile__img"
+                />
+              ) : (
+                <div className="deck-card-tile__no-img">?</div>
+              )}
+              <span className={`deck-card-tile__count ${deck.total_cards === 50 ? 'count--ok' : 'count--ng'}`}>
+                {deck.total_cards}/50
+              </span>
+            </div>
+            <div className="deck-card-tile__footer">
+              <span className="deck-card-tile__name">{deck.name}</span>
               {deck.leader && (
-                <span className="deck-card__leader">{deck.leader.name ?? deck.leader.name_en}</span>
+                <span className="deck-card-tile__leader">
+                  {deck.leader.name ?? deck.leader.name_en}
+                </span>
               )}
             </div>
             <button
-              className="btn btn--danger btn--sm"
+              className="deck-card-tile__del"
               onClick={(e) => {
                 e.stopPropagation()
                 handleDelete(deck.id)
               }}
+              title="削除"
             >
-              削除
+              ✕
             </button>
           </div>
         ))}

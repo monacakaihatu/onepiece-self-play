@@ -54,6 +54,8 @@ async def list_cards(
     category: list[str] = Query(default=[]),
     exclude_category: list[str] = Query(default=[]),
     set_code: list[str] = Query(default=[]),
+    rarity: list[str] = Query(default=[]),
+    sub_types: Optional[str] = None,
     sort: str = "id",
     limit: int = 100,
     offset: int = 0,
@@ -62,8 +64,8 @@ async def list_cards(
     params: list = []
 
     if q:
-        conditions.append("(name LIKE ? OR name_en LIKE ? OR id LIKE ?)")
-        params += [f"%{q}%", f"%{q}%", f"%{q}%"]
+        conditions.append("(name LIKE ? OR name_en LIKE ? OR id LIKE ? OR effect_text LIKE ? OR effect_text_en LIKE ? OR sub_types LIKE ?)")
+        params += [f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"]
 
     if color:
         color_conditions = " OR ".join(["(' ' || color || ' ') LIKE ?" for _ in color])
@@ -89,6 +91,15 @@ async def list_cards(
         placeholders = ",".join("?" * len(set_code))
         conditions.append(f"set_code IN ({placeholders})")
         params += set_code
+
+    if rarity:
+        placeholders = ",".join("?" * len(rarity))
+        conditions.append(f"rarity IN ({placeholders})")
+        params += rarity
+
+    if sub_types:
+        conditions.append("sub_types LIKE ?")
+        params += [f"%{sub_types}%"]
 
     where = " AND ".join(conditions)
     order_by = _SORT_MAP.get(sort, "id ASC")
