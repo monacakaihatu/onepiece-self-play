@@ -47,7 +47,7 @@ export function ContextMenu() {
   }
 
   const copyText = () => {
-    const text = `${card.card.name ?? card.card.name_en}\n${card.card.effect_text ?? card.card.effect_text_en ?? ''}`
+    const text = `${card.card.name ?? card.card.name_en ?? card.card.id}\n${card.card.effect_text ?? card.card.effect_text_en ?? ''}`
     navigator.clipboard.writeText(text).catch(() => {})
     closeContextMenu()
   }

@@ -43,6 +43,7 @@ export interface GameSnapshot {
   cards: Record<string, GameCard>
   donTokens: DonToken[]
   lifeCards: string[]
+  deckOrder: string[]
   turnNumber: number
   phase: GamePhase
 }

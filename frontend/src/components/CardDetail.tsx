@@ -16,7 +16,7 @@ export function CardDetail({ card, onClose, onAdd }: Props) {
 
         <img
           src={`/image/${card.id}`}
-          alt={card.name ?? card.name_en ?? undefined}
+          alt={card.name ?? card.name_en ?? card.id}
           className="card-add-modal__img"
         />
 

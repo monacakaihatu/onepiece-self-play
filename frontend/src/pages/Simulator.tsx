@@ -28,7 +28,7 @@ export function Simulator() {
   const initialized = useGameStore((s) => s.initialized)
   const loading = useGameStore((s) => s.loading)
   const error = useGameStore((s) => s.error)
-  const { initGame, moveCard, drawCard, refreshAll, nextPhase, undo, redo, closeContextMenu } =
+  const { initGame, moveCard, drawCard, refreshAll, nextPhase, undo, redo, closeContextMenu, returnDon } =
     useGameStore.getState()
 
   useEffect(() => {
@@ -93,6 +93,12 @@ export function Simulator() {
     const { active, over } = event
     if (!over) return
     const instanceId = active.id as string
+
+    if (over.id === 'don_return') {
+      returnDon(instanceId)
+      return
+    }
+
     const toZone = over.id as ZoneId
     if (!VALID_ZONES.includes(toZone)) return
 

@@ -26,6 +26,7 @@ export interface GameStore {
   cards: Record<string, GameCard>
   donTokens: DonToken[]
   lifeCards: string[]
+  deckOrder: string[]
   initialized: boolean
   loading: boolean
   error: string | null
@@ -84,6 +85,7 @@ function snapshot(state: GameStore): GameSnapshot {
     cards: structuredClone(state.cards),
     donTokens: structuredClone(state.donTokens),
     lifeCards: [...state.lifeCards],
+    deckOrder: [...state.deckOrder],
     turnNumber: state.turnNumber,
     phase: state.phase,
   }
@@ -97,6 +99,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   cards: {},
   donTokens: buildDonTokens(),
   lifeCards: [],
+  deckOrder: [],
   initialized: false,
   loading: false,
   error: null,
@@ -164,11 +167,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
         cards[id] = { ...cards[id], zone: 'deck' }
       }
 
+      const deckOrder = deckInstanceIds.slice(lifeCount)
+
       set({
         deckId,
         deckName: deck.name,
         cards,
         lifeCards,
+        deckOrder,
         donTokens: buildDonTokens(),
         turnNumber: 1,
         phase: 'main',
@@ -260,12 +266,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
       }
 
-      // Detach don if leaving field
+      // Only detach DON!! when card actually leaves field/leader
+      const isLeavingFieldOrLeader =
+        (card.zone === 'field' || card.zone === 'leader') &&
+        toZone !== 'field' && toZone !== 'leader'
       let newDonTokens = s.donTokens
-      if (card.zone === 'field' || card.zone === 'leader') {
+      if (isLeavingFieldOrLeader) {
         newDonTokens = s.donTokens.map((d) =>
           d.attachedTo === instanceId ? { ...d, used: false, attachedTo: undefined } : d
         )
+      }
+
+      // Update deckOrder
+      let newDeckOrder = s.deckOrder
+      if (card.zone === 'deck') {
+        newDeckOrder = newDeckOrder.filter((id) => id !== instanceId)
+      }
+      if (toZone === 'deck') {
+        newDeckOrder = opts.toTop
+          ? [instanceId, ...newDeckOrder]
+          : [...newDeckOrder, instanceId]
       }
 
       return {
@@ -277,11 +297,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
             faceUp,
             fieldIndex: toZone === 'field' ? fieldIndex : undefined,
             rested: toZone === 'field' ? false : card.rested,
-            donAttached: (toZone === 'field' || toZone === 'leader') ? card.donAttached : 0,
+            donAttached: isLeavingFieldOrLeader ? 0 : (toZone === 'field' || toZone === 'leader') ? card.donAttached : 0,
           },
         },
         lifeCards: newLifeCards,
         donTokens: newDonTokens,
+        deckOrder: newDeckOrder,
       }
     })
   },
@@ -291,9 +312,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((s) => {
       const updates: Record<string, GameCard> = {}
       let fieldIdx = Object.values(s.cards).filter((c) => c.zone === 'field').length
+      let newDeckOrder = s.deckOrder
       for (const id of instanceIds) {
         const card = s.cards[id]
         if (!card) continue
+        if (card.zone === 'deck') {
+          newDeckOrder = newDeckOrder.filter((oid) => oid !== id)
+        }
         updates[id] = {
           ...card,
           zone: toZone,
@@ -301,7 +326,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
           fieldIndex: toZone === 'field' ? fieldIdx++ : undefined,
         }
       }
-      return { cards: { ...s.cards, ...updates } }
+      if (toZone === 'deck') {
+        const newIds = instanceIds.filter((id) => s.cards[id])
+        newDeckOrder = [...newDeckOrder, ...newIds]
+      }
+      return { cards: { ...s.cards, ...updates }, deckOrder: newDeckOrder }
     })
   },
 
@@ -364,41 +393,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
   shuffleDeck: () => {
     get()._pushSnapshot()
     set((s) => {
-      const deckCards = Object.values(s.cards).filter((c) => c.zone === 'deck')
-      for (let i = deckCards.length - 1; i > 0; i--) {
+      const order = [...s.deckOrder]
+      for (let i = order.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
-        ;[deckCards[i], deckCards[j]] = [deckCards[j], deckCards[i]]
+        ;[order[i], order[j]] = [order[j], order[i]]
       }
-      return { cards: { ...s.cards } }
+      return { deckOrder: order }
     })
   },
 
   drawCard: (count = 1) => {
     get()._pushSnapshot()
     set((s) => {
-      const deckCards = Object.values(s.cards)
-        .filter((c) => c.zone === 'deck')
-      if (deckCards.length === 0) return {}
-      const toDraw = deckCards.slice(0, count)
+      const toDraw = s.deckOrder.slice(0, count)
+      if (toDraw.length === 0) return {}
       const updates: Record<string, GameCard> = {}
-      for (const card of toDraw) {
-        updates[card.instanceId] = { ...card, zone: 'hand', faceUp: true }
+      for (const id of toDraw) {
+        const card = s.cards[id]
+        if (card) updates[id] = { ...card, zone: 'hand', faceUp: true }
       }
-      return { cards: { ...s.cards, ...updates } }
+      return { cards: { ...s.cards, ...updates }, deckOrder: s.deckOrder.slice(count) }
     })
   },
 
   drawToLife: (count) => {
     set((s) => {
-      const deckCards = Object.values(s.cards).filter((c) => c.zone === 'deck')
-      const toDraw = deckCards.slice(0, count)
+      const toDraw = s.deckOrder.slice(0, count)
       const updates: Record<string, GameCard> = {}
       const newLifeCards = [...s.lifeCards]
-      for (const card of toDraw) {
-        updates[card.instanceId] = { ...card, zone: 'life', faceUp: false }
-        newLifeCards.push(card.instanceId)
+      for (const id of toDraw) {
+        const card = s.cards[id]
+        if (!card) continue
+        updates[id] = { ...card, zone: 'life', faceUp: false }
+        newLifeCards.push(id)
       }
-      return { cards: { ...s.cards, ...updates }, lifeCards: newLifeCards }
+      return {
+        cards: { ...s.cards, ...updates },
+        lifeCards: newLifeCards,
+        deckOrder: s.deckOrder.slice(count),
+      }
     })
   },
 
@@ -499,24 +532,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const idx = PHASE_ORDER.indexOf(phase)
 
     if (phase === 'end') {
-      // Next turn
-      const newTurn = turnNumber + 1
-      set({ turnNumber: newTurn, phase: 'refresh' })
-      get().refreshAll()
-      get().refreshDon()
+      set((s) => {
+        // Inline refreshAll + refreshDon in a single set
+        const cardUpdates: Record<string, GameCard> = {}
+        for (const [id, card] of Object.entries(s.cards)) {
+          if (card.rested || card.donAttached > 0) {
+            cardUpdates[id] = { ...card, rested: false, donAttached: 0 }
+          }
+        }
+        return {
+          turnNumber: turnNumber + 1,
+          phase: 'refresh',
+          cards: { ...s.cards, ...cardUpdates },
+          donTokens: s.donTokens.map((d) => ({ ...d, used: false, attachedTo: undefined })),
+        }
+      })
       return
     }
 
     const next = PHASE_ORDER[idx + 1]
-    set({ phase: next })
 
     if (next === 'draw') {
-      get().drawCard(1)
+      set((s) => {
+        const topId = s.deckOrder[0]
+        if (!topId) return { phase: next }
+        const card = s.cards[topId]
+        if (!card) return { phase: next }
+        return {
+          phase: next,
+          cards: { ...s.cards, [topId]: { ...card, zone: 'hand', faceUp: true } },
+          deckOrder: s.deckOrder.slice(1),
+        }
+      })
+      return
     }
+
     if (next === 'don') {
-      const donCount = Math.min(get().turnNumber + 1, 2)
-      get().gainDon(donCount)
+      set((s) => {
+        let gained = 0
+        const donCount = Math.min(s.turnNumber + 1, 2)
+        const donTokens = s.donTokens.map((d) => {
+          if (!d.used && gained < donCount) { gained++; return { ...d, used: true } }
+          return d
+        })
+        return { phase: next, donTokens }
+      })
+      return
     }
+
+    set({ phase: next })
   },
 
   setPhase: (phase) => {

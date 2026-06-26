@@ -85,7 +85,7 @@ export function DeckList() {
             {deck.leader && (
               <img
                 src={`/image/${deck.leader.id}`}
-                alt={deck.leader.name ?? ''}
+                alt={deck.leader.name ?? deck.leader.name_en ?? ''}
                 className="deck-card__img"
               />
             )}
