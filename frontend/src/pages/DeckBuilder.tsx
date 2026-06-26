@@ -61,7 +61,7 @@ export function DeckBuilder() {
 
   useEffect(() => {
     fetchCards({ ...filters, offset: 0 })
-  }, [filters.q, filters.color, filters.cost, filters.category, filters.set_code, filters.sort])
+  }, [filters.q, filters.color, filters.cost, filters.category, filters.set_code, filters.sort, filters.rarity, filters.sub_types])
 
   const handleScrollEnd = useCallback(() => {
     if (loading || !hasMore) return
@@ -88,6 +88,36 @@ export function DeckBuilder() {
     [leaderColors],
   )
 
+  // シングルクリック → +1枚（上限4枚、色制限チェック）
+  const handleCardClick = useCallback(
+    (card: Card) => {
+      if (isDisabled(card)) return
+      setDeckCards((prev) => {
+        const existing = prev.find((c) => c.card.id === card.id)
+        if (existing) {
+          if (existing.quantity >= 4) return prev
+          return prev.map((c) =>
+            c.card.id === card.id ? { ...c, quantity: c.quantity + 1 } : c,
+          )
+        }
+        return [...prev, { card, quantity: 1 }]
+      })
+    },
+    [isDisabled],
+  )
+
+  // 右クリック → −1枚（0になれば削除）
+  const handleCardRightClick = useCallback((e: React.MouseEvent, card: Card) => {
+    e.preventDefault()
+    setDeckCards((prev) => {
+      const existing = prev.find((c) => c.card.id === card.id)
+      if (!existing) return prev
+      if (existing.quantity <= 1) return prev.filter((c) => c.card.id !== card.id)
+      return prev.map((c) => (c.card.id === card.id ? { ...c, quantity: c.quantity - 1 } : c))
+    })
+  }, [])
+
+  // ダブルクリック → 詳細モーダル
   const openCardModal = useCallback(
     (card: Card) => {
       const existing = deckCards.find((c) => c.card.id === card.id)
@@ -185,13 +215,19 @@ export function DeckBuilder() {
           <span className={totalCards === 50 ? 'count--ok' : 'count--ng'}>
             {totalCards} / 50 枚
           </span>
+          <span className="deck-strip__hint">左クリック +1 ／ 右クリック −1 ／ ダブルクリック 詳細</span>
         </div>
         <div className="deck-strip__scroll">
           {deckCards.length === 0 ? (
             <span className="deck-strip__empty">下のグリッドからカードを追加してください</span>
           ) : (
             deckCards.map(({ card, quantity }) => (
-              <div key={card.id} className="deck-strip__item" onClick={() => openCardModal(card)}>
+              <div
+                key={card.id}
+                className="deck-strip__item"
+                onClick={() => openCardModal(card)}
+                title={`${card.name ?? card.name_en} ×${quantity}`}
+              >
                 <img src={`/image/${card.id}`} alt={card.name ?? card.name_en} />
                 <span className="deck-strip__badge">×{quantity}</span>
               </div>
@@ -230,7 +266,9 @@ export function DeckBuilder() {
           <div className="card-grid-wrap">
             <CardGrid
               cards={cards}
-              onCardClick={openCardModal}
+              onCardClick={handleCardClick}
+              onCardDoubleClick={openCardModal}
+              onCardRightClick={handleCardRightClick}
               getBadge={getBadge}
               isDisabled={isDisabled}
               onScrollEnd={handleScrollEnd}
@@ -276,6 +314,12 @@ export function DeckBuilder() {
                     <th>色</th>
                     <td>{selectedCard.color}</td>
                   </tr>
+                  {selectedCard.rarity && (
+                    <tr>
+                      <th>レアリティ</th>
+                      <td>{selectedCard.rarity}</td>
+                    </tr>
+                  )}
                   {selectedCard.cost != null && (
                     <tr>
                       <th>コスト</th>

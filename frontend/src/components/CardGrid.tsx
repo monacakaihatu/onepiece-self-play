@@ -10,13 +10,24 @@ const CARD_ASPECT = 580 / 419
 interface Props {
   cards: Card[]
   onCardClick?: (card: Card) => void
+  onCardDoubleClick?: (card: Card) => void
+  onCardRightClick?: (e: React.MouseEvent, card: Card) => void
   getBadge?: (card: Card) => number | undefined
   isDisabled?: (card: Card) => boolean
   onScrollEnd?: () => void
   cols?: number
 }
 
-export function CardGrid({ cards, onCardClick, getBadge, isDisabled, onScrollEnd, cols: colsProp }: Props) {
+export function CardGrid({
+  cards,
+  onCardClick,
+  onCardDoubleClick,
+  onCardRightClick,
+  getBadge,
+  isDisabled,
+  onScrollEnd,
+  cols: colsProp,
+}: Props) {
   const parentRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
 
@@ -85,6 +96,8 @@ export function CardGrid({ cards, onCardClick, getBadge, isDisabled, onScrollEnd
                   <CardTile
                     card={card}
                     onClick={onCardClick}
+                    onDoubleClick={onCardDoubleClick}
+                    onRightClick={onCardRightClick}
                     badge={getBadge?.(card)}
                     disabled={isDisabled?.(card)}
                   />

@@ -4,6 +4,7 @@ const COLORS = ['Red', 'Blue', 'Green', 'Yellow', 'Black', 'Purple']
 const JP_COLORS = ['赤', '青', '緑', '黄', '黒', '紫']
 const CATEGORIES = ['Leader', 'Character', 'Event', 'Stage']
 const COSTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+const RARITIES = ['L', 'SEC', 'SP', 'SR', 'R', 'UC', 'C', 'PR']
 
 interface Props {
   filters: CardFilters
@@ -19,7 +20,15 @@ export function FilterPanel({ filters, onChange, hideCategories = [] }: Props) {
   const colors = filters.color ?? []
   const categories = filters.category ?? []
   const costs = filters.cost ?? []
+  const rarities = filters.rarity ?? []
   const visibleCategories = CATEGORIES.filter((c) => !hideCategories.includes(c))
+
+  const hasFilters =
+    colors.length > 0 ||
+    categories.length > 0 ||
+    costs.length > 0 ||
+    rarities.length > 0 ||
+    !!filters.sub_types
 
   return (
     <div className="filter-panel">
@@ -68,10 +77,47 @@ export function FilterPanel({ filters, onChange, hideCategories = [] }: Props) {
         </div>
       </div>
 
-      {(colors.length > 0 || categories.length > 0 || costs.length > 0) && (
+      <div className="filter-panel__section">
+        <h4>レアリティ</h4>
+        <div className="filter-panel__chips">
+          {RARITIES.map((r) => (
+            <button
+              key={r}
+              className={`chip${rarities.includes(r) ? ' chip--active' : ''}`}
+              onClick={() => onChange({ ...filters, rarity: toggle(rarities, r), offset: 0 })}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="filter-panel__section">
+        <h4>特徴</h4>
+        <input
+          className="filter-subtype-input"
+          placeholder="例: 王下七武海"
+          value={filters.sub_types ?? ''}
+          onChange={(e) =>
+            onChange({ ...filters, sub_types: e.target.value || undefined, offset: 0 })
+          }
+        />
+      </div>
+
+      {hasFilters && (
         <button
-          className="btn btn--ghost"
-          onClick={() => onChange({ ...filters, color: [], category: [], cost: [], offset: 0 })}
+          className="btn btn--ghost filter-reset-btn"
+          onClick={() =>
+            onChange({
+              ...filters,
+              color: [],
+              category: [],
+              cost: [],
+              rarity: [],
+              sub_types: undefined,
+              offset: 0,
+            })
+          }
         >
           フィルタをリセット
         </button>
