@@ -71,9 +71,12 @@ export function GameCardDisplay({
     setPreview(null)
   }
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    const x = touch.clientX
+    const y = touch.clientY
     longPressRef.current = setTimeout(() => {
-      openContextMenu(instanceId, 100, 100)
+      openContextMenu(instanceId, x, y)
     }, 600)
   }
 

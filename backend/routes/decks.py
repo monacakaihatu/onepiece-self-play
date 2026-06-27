@@ -2,7 +2,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from database import get_db
 from models import (
-    DeckCreate, DeckUpdate, DeckSummary, DeckDetail, DeckCardItem, DeckCardsUpdate
+    Card, DeckCreate, DeckUpdate, DeckSummary, DeckDetail, DeckCardItem, DeckCardsUpdate
 )
 from routes.cards import row_to_card
 

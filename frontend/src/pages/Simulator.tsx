@@ -33,20 +33,19 @@ export function Simulator() {
   const loading = useStore(singletonGameStore, (s) => s.loading)
   const error = useStore(singletonGameStore, (s) => s.error)
 
-  const { initGame, moveCard, drawCard, refreshAll, nextPhase, undo, redo, closeContextMenu, returnDon } =
-    singletonGameStore.getState()
-
   useEffect(() => {
     if (!deckId) return
     const id = parseInt(deckId, 10)
     if (isNaN(id)) return
-    initGame(id)
+    singletonGameStore.getState().initGame(id)
   }, [deckId])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      const { nextPhase, drawCard, refreshAll, undo, redo, closeContextMenu, setPreview } =
+        singletonGameStore.getState()
 
       if (e.code === 'Space' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault()
@@ -73,7 +72,7 @@ export function Simulator() {
       }
       if (e.key === 'Escape') {
         closeContextMenu()
-        singletonGameStore.getState().setPreview(null)
+        setPreview(null)
       }
     }
     window.addEventListener('keydown', handler)
@@ -89,6 +88,7 @@ export function Simulator() {
     const { active, over } = event
     if (!over) return
     const instanceId = active.id as string
+    const { moveCard, returnDon } = singletonGameStore.getState()
 
     if (over.id === 'don_return') {
       returnDon(instanceId)

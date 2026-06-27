@@ -39,7 +39,7 @@ function DeckPickerPanel({
                 {selected.leader.name ?? selected.leader.name_en}
               </div>
             )}
-            <div className={`setup-picker-chosen__count ${selected.total_cards === 50 ? 'count--ok' : selected.total_cards > 50 ? 'count--ng' : 'count--warn'}`}>
+            <div className={`setup-picker-chosen__count ${selected.selected.total_cards > 0 && selected.total_cards <= 50 ? 'count--ok' : 'count--ng'}`}>
               {selected.total_cards}/50 枚
             </div>
             <button className="btn btn--sm" onClick={() => onSelect(selected)}>
@@ -53,14 +53,14 @@ function DeckPickerPanel({
             <div className="setup-picker-empty">デッキがありません</div>
           ) : (
             decks.map((deck) => {
-              const ready = deck.total_cards === 50
+              const ready = deck.total_cards > 0 && deck.total_cards <= 50
               return (
                 <button
                   key={deck.id}
                   className={`setup-deck-tile${ready ? '' : ' setup-deck-tile--disabled'}`}
                   onClick={() => ready && onSelect(deck)}
                   disabled={!ready}
-                  title={ready ? deck.name : `${deck.total_cards}/50枚（50枚のデッキのみ選択できます）`}
+                  title={ready ? deck.name : `${deck.total_cards}枚（1〜50枚のデッキのみ選択できます）`}
                 >
                   <div className="setup-deck-tile__img-wrap">
                     {deck.leader ? (
@@ -74,7 +74,7 @@ function DeckPickerPanel({
                     )}
                   </div>
                   <div className="setup-deck-tile__name">{deck.name}</div>
-                  <div className={`setup-deck-tile__count ${deck.total_cards === 50 ? 'count--ok' : deck.total_cards > 50 ? 'count--ng' : 'count--warn'}`}>
+                  <div className={`setup-deck-tile__count ${deck.total_cards > 0 && deck.total_cards <= 50 ? 'count--ok' : 'count--ng'}`}>
                     {deck.total_cards}/50
                   </div>
                 </button>
@@ -125,8 +125,8 @@ export function SimulatorSetup() {
     navigate(`/duel/${firstId}/${secondId}`)
   }
 
-  const decksForA = decks
-  const decksForB = decks
+  const decksForA = decks.filter((d) => d.id !== deckB?.id)
+  const decksForB = decks.filter((d) => d.id !== deckA?.id)
 
   if (loading) return <div className="loading">読み込み中...</div>
 
@@ -140,14 +140,14 @@ export function SimulatorSetup() {
             label="プレイヤー A"
             selected={deckA}
             onSelect={handleSelectA}
-            decks={deckA ? decks : decksForA}
+            decks={decksForA}
           />
           <div className="setup-vs">VS</div>
           <DeckPickerPanel
             label="プレイヤー B"
             selected={deckB}
             onSelect={handleSelectB}
-            decks={deckB ? decks : decksForB}
+            decks={decksForB}
           />
         </div>
 

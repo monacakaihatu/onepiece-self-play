@@ -101,7 +101,7 @@ export function createGameStore() {
     deckId: null,
     deckName: '',
     turnNumber: 1,
-    phase: 'main',
+    phase: 'refresh',
     cards: {},
     donTokens: buildDonTokens(storeId),
     lifeCards: [],
@@ -168,22 +168,25 @@ export function createGameStore() {
 
         const deckOrder = deckInstanceIds.slice(lifeCount)
 
+        const initialHand = deckOrder.slice(0, 5)
+        for (const id of initialHand) {
+          cards[id] = { ...cards[id], zone: 'hand', faceUp: true }
+        }
+
         set({
           deckId,
           deckName: deck.name,
           cards,
           lifeCards,
-          deckOrder,
+          deckOrder: deckOrder.slice(5),
           donTokens: buildDonTokens(storeId),
           turnNumber: 1,
-          phase: 'main',
+          phase: 'refresh',
           initialized: true,
           loading: false,
           _history: [],
           _future: [],
         })
-
-        get().drawCard(5)
       } catch (e: unknown) {
         const msg = e && typeof e === 'object' && 'detail' in e
           ? String((e as { detail: unknown }).detail)
@@ -437,6 +440,7 @@ export function createGameStore() {
     },
 
     drawToLife: (count) => {
+      get()._pushSnapshot()
       set((s) => {
         const toDraw = s.deckOrder.slice(0, count)
         const updates: Record<string, GameCard> = {}
