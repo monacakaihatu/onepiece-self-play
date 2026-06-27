@@ -2,6 +2,7 @@ from __future__ import annotations
 import aiosqlite
 from contextlib import asynccontextmanager
 from pathlib import Path
+from sets import SET_INFO, get_block, get_expansion_name
 
 DB_PATH = Path(__file__).parent / "db" / "cards.db"
 
@@ -49,15 +50,40 @@ async def init_db():
                 sub_types       TEXT,
                 attribute       TEXT,
                 life            TEXT,
-                rarity          TEXT
+                rarity          TEXT,
+                block           TEXT,
+                expansion_name  TEXT
             )
         """)
-        # 新カラムが欠けている場合の補完 (既存DBで新カラムが未追加の場合)
-        for col, coltype in [("name_en", "TEXT"), ("effect_text_en", "TEXT")]:
+        # 欠けているカラムを補完
+        for col, coltype in [
+            ("name_en", "TEXT"), ("effect_text_en", "TEXT"),
+            ("block", "TEXT"), ("expansion_name", "TEXT"),
+        ]:
             try:
                 await db.execute(f"ALTER TABLE cards ADD COLUMN {col} {coltype}")
             except Exception:
                 pass
+
+        # block / expansion_name を set_code から一括補完
+        await db.execute("""
+            UPDATE cards SET
+                block = CASE set_code
+                    WHEN 'OP01' THEN 'S1' WHEN 'OP02' THEN 'S1' WHEN 'OP03' THEN 'S1'
+                    WHEN 'OP04' THEN 'S2' WHEN 'OP05' THEN 'S2' WHEN 'OP06' THEN 'S2'
+                    WHEN 'OP07' THEN 'S3' WHEN 'OP08' THEN 'S3' WHEN 'OP09' THEN 'S3'
+                    WHEN 'OP10' THEN 'S4'
+                    WHEN 'ST01' THEN 'S1' WHEN 'ST02' THEN 'S1' WHEN 'ST03' THEN 'S1' WHEN 'ST04' THEN 'S1'
+                    WHEN 'ST05' THEN 'S2' WHEN 'ST06' THEN 'S2' WHEN 'ST07' THEN 'S2' WHEN 'ST08' THEN 'S2'
+                    WHEN 'ST09' THEN 'S2' WHEN 'ST10' THEN 'S2' WHEN 'ST11' THEN 'S2' WHEN 'ST12' THEN 'S2'
+                    WHEN 'ST13' THEN 'S3' WHEN 'ST14' THEN 'S3' WHEN 'ST15' THEN 'S3' WHEN 'ST16' THEN 'S3'
+                    WHEN 'ST17' THEN 'S3' WHEN 'ST18' THEN 'S3' WHEN 'ST19' THEN 'S3'
+                    WHEN 'ST20' THEN 'S4' WHEN 'ST21' THEN 'S4'
+                    WHEN 'EB01' THEN 'PROMO'
+                    ELSE 'PROMO'
+                END
+            WHERE block IS NULL AND set_code IS NOT NULL
+        """)
 
         # image_url を EN → JP サイトに更新
         await db.execute(
@@ -89,6 +115,7 @@ async def init_db():
         await db.execute("CREATE INDEX IF NOT EXISTS idx_cards_cost     ON cards(cost)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_cards_category ON cards(category)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_cards_set_code ON cards(set_code)")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_cards_block    ON cards(block)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_deck_cards_deck_id ON deck_cards(deck_id)")
 
         await db.commit()

@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Card, DeckDetail, DeckSummary } from '../types'
 import { CardGrid } from '../components/CardGrid'
+import { AppHeader } from '../components/AppHeader'
 
 export function DeckList() {
   const navigate = useNavigate()
@@ -65,16 +66,15 @@ export function DeckList() {
 
   return (
     <div className="page deck-list-page">
-      <header className="page__header">
-        <button className="btn btn--ghost" onClick={() => navigate('/')}>← ホーム</button>
-        <h1>デッキ一覧</h1>
-        <Link to="/cards" className="btn btn--ghost">
-          カード一覧
-        </Link>
-        <button className="btn btn--primary" onClick={() => setShowCreate(true)}>
-          ＋ 新規デッキ
-        </button>
-      </header>
+      <AppHeader
+        back={{ to: '/', label: 'ホーム' }}
+        title="デッキ一覧"
+        right={
+          <button className="btn btn--primary" onClick={() => setShowCreate(true)}>
+            ＋ 新規デッキ
+          </button>
+        }
+      />
 
       {decks.length === 0 && !showCreate && (
         <p className="empty-state">デッキがまだありません。新規作成してみましょう。</p>
@@ -93,7 +93,7 @@ export function DeckList() {
               ) : (
                 <div className="deck-card-tile__no-img">?</div>
               )}
-              <span className={`deck-card-tile__count ${deck.total_cards === 50 ? 'count--ok' : 'count--ng'}`}>
+              <span className={`deck-card-tile__count ${deck.total_cards === 50 ? 'count--ok' : deck.total_cards > 50 ? 'count--ng' : 'count--warn'}`}>
                 {deck.total_cards}/50
               </span>
             </div>
@@ -149,7 +149,7 @@ export function DeckList() {
                         {previewDeck.leader.name ?? previewDeck.leader.name_en}
                       </span>
                     )}
-                    <span className={previewDeck.total_cards === 50 ? 'count--ok' : 'count--ng'}>
+                    <span className={previewDeck.total_cards === 50 ? 'count--ok' : previewDeck.total_cards > 50 ? 'count--ng' : 'count--warn'}>
                       {previewDeck.total_cards} / 50 枚
                     </span>
                   </div>
@@ -176,14 +176,6 @@ export function DeckList() {
                   >
                     編集
                   </button>
-                  {previewDeck.total_cards === 50 && (
-                    <button
-                      className="btn btn--accent2"
-                      onClick={() => navigate(`/solitaire/${previewDeck.id}`)}
-                    >
-                      一人回し ▶
-                    </button>
-                  )}
                   <button className="btn" onClick={() => setPreviewDeck(null)}>
                     閉じる
                   </button>

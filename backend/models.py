@@ -21,6 +21,8 @@ class Card(BaseModel):
     attribute: Optional[str] = None
     life: Optional[str] = None
     rarity: Optional[str] = None
+    block: Optional[str] = None
+    expansion_name: Optional[str] = None
 
 
 class DeckCardEntry(BaseModel):

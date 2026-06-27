@@ -1,4 +1,4 @@
-import type { Card } from '../types'
+﻿import type { Card } from '../types'
 
 interface Props {
   card: Card
@@ -16,7 +16,7 @@ export function CardDetail({ card, onClose, onAdd }: Props) {
 
         <img
           src={`/image/${card.id}`}
-          alt={card.name ?? card.name_en ?? ''}
+          alt={card.name ?? card.name_en ?? card.id}
           className="card-add-modal__img"
         />
 

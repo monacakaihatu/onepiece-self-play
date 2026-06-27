@@ -10,6 +10,9 @@ from pathlib import Path
 import httpx
 import aiosqlite
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from sets import get_block, get_expansion_name
+
 DB_PATH = Path(__file__).parent.parent / "db" / "cards.db"
 IMAGE_BASE = "https://www.onepiece-cardgame.com/images/cardlist/card"
 
@@ -65,6 +68,8 @@ def _map_card(raw: dict) -> dict | None:
         "attribute": _clean_text(raw.get("attribute")),
         "life": _clean_text(raw.get("life")),
         "rarity": _clean_text(raw.get("rarity")),
+        "block": get_block(_clean_text(raw.get("set_id"))),
+        "expansion_name": get_expansion_name(_clean_text(raw.get("set_id"))),
     }
 
 
@@ -98,10 +103,15 @@ async def init_schema(db: aiosqlite.Connection):
             sub_types       TEXT,
             attribute       TEXT,
             life            TEXT,
-            rarity          TEXT
+            rarity          TEXT,
+            block           TEXT,
+            expansion_name  TEXT
         )
     """)
-    for col, coltype in [("name_en", "TEXT"), ("effect_text_en", "TEXT")]:
+    for col, coltype in [
+        ("name_en", "TEXT"), ("effect_text_en", "TEXT"),
+        ("block", "TEXT"), ("expansion_name", "TEXT"),
+    ]:
         try:
             await db.execute(f"ALTER TABLE cards ADD COLUMN {col} {coltype}")
         except Exception:
@@ -161,8 +171,9 @@ async def main():
             await db.execute(
                 """INSERT INTO cards
                    (id, name, name_en, cost, color, category, power, counter,
-                    effect_text, effect_text_en, image_url, set_code, sub_types, attribute, life, rarity)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    effect_text, effect_text_en, image_url, set_code, sub_types,
+                    attribute, life, rarity, block, expansion_name)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                    ON CONFLICT(id) DO UPDATE SET
                      name_en=excluded.name_en,
                      cost=excluded.cost,
@@ -176,12 +187,15 @@ async def main():
                      sub_types=excluded.sub_types,
                      attribute=excluded.attribute,
                      life=excluded.life,
-                     rarity=excluded.rarity""",
+                     rarity=excluded.rarity,
+                     block=excluded.block,
+                     expansion_name=excluded.expansion_name""",
                 [
                     card["id"], card["name"], card["name_en"], card["cost"], card["color"],
                     card["category"], card["power"], card["counter"],
                     card["effect_text"], card["effect_text_en"], card["image_url"], card["set_code"],
                     card["sub_types"], card["attribute"], card["life"], card["rarity"],
+                    card["block"], card["expansion_name"],
                 ],
             )
             inserted += 1

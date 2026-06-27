@@ -70,8 +70,19 @@ def _fetch_series_cards(series_id: str) -> dict[str, dict]:
         else:
             effect_ja = None
 
+        # 特徴 (sub_types) — 複数パターンに対応
+        sub_m = (
+            re.search(r'class="feature[^"]*"[^>]*>\s*([^<]+?)\s*<', content)
+            or re.search(r'<dt[^>]*>[^<]*特徴[^<]*</dt>\s*<dd[^>]*>([^<]+)</dd>', content)
+        )
+        sub_types_ja = sub_m.group(1).strip() if sub_m else None
+
         if name_ja:
-            cards[card_id] = {"name_ja": name_ja, "effect_text_ja": effect_ja}
+            cards[card_id] = {
+                "name_ja": name_ja,
+                "effect_text_ja": effect_ja,
+                "sub_types_ja": sub_types_ja,
+            }
 
     return cards
 
@@ -108,10 +119,17 @@ async def run():
 
             count = 0
             for card_id, data in cards.items():
-                cur = await db.execute(
-                    "UPDATE cards SET name=?, effect_text=? WHERE id=?",
-                    [data["name_ja"], data["effect_text_ja"], card_id],
-                )
+                sub = data.get("sub_types_ja")
+                if sub:
+                    cur = await db.execute(
+                        "UPDATE cards SET name=?, effect_text=?, sub_types=? WHERE id=?",
+                        [data["name_ja"], data["effect_text_ja"], sub, card_id],
+                    )
+                else:
+                    cur = await db.execute(
+                        "UPDATE cards SET name=?, effect_text=? WHERE id=?",
+                        [data["name_ja"], data["effect_text_ja"], card_id],
+                    )
                 count += cur.rowcount
 
             await db.commit()

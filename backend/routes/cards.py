@@ -43,6 +43,8 @@ def row_to_card(row) -> Card:
         attribute=row["attribute"],
         life=row["life"],
         rarity=row["rarity"],
+        block=_safe_get(row, "block"),
+        expansion_name=_safe_get(row, "expansion_name"),
     )
 
 
@@ -54,6 +56,7 @@ async def list_cards(
     category: list[str] = Query(default=[]),
     exclude_category: list[str] = Query(default=[]),
     set_code: list[str] = Query(default=[]),
+    block: list[str] = Query(default=[]),
     rarity: list[str] = Query(default=[]),
     sub_types: Optional[str] = None,
     sort: str = "id",
@@ -91,6 +94,11 @@ async def list_cards(
         placeholders = ",".join("?" * len(set_code))
         conditions.append(f"set_code IN ({placeholders})")
         params += set_code
+
+    if block:
+        placeholders = ",".join("?" * len(block))
+        conditions.append(f"block IN ({placeholders})")
+        params += block
 
     if rarity:
         placeholders = ",".join("?" * len(rarity))
