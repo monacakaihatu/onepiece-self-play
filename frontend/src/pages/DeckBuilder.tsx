@@ -5,6 +5,7 @@ import type { Card, CardFilters, DeckCardItem, DeckDetail } from '../types'
 import { CardGrid } from '../components/CardGrid'
 import { SearchBar } from '../components/SearchBar'
 import { FilterPanel } from '../components/FilterPanel'
+import { AppHeader } from '../components/AppHeader'
 
 const PAGE_SIZE = 100
 
@@ -39,6 +40,27 @@ export function DeckBuilder() {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [pendingQty, setPendingQty] = useState(0)
   const [searchOpen, setSearchOpen] = useState(true)
+
+  // 採用候補カード（localStorage で永続化）
+  const [candidates, setCandidates] = useState<Card[]>(() => {
+    try {
+      const s = localStorage.getItem(`candidates-${deckId}`)
+      return s ? JSON.parse(s) : []
+    } catch { return [] }
+  })
+  const [candidatesOpen, setCandidatesOpen] = useState(true)
+
+  useEffect(() => {
+    localStorage.setItem(`candidates-${deckId}`, JSON.stringify(candidates))
+  }, [candidates, deckId])
+
+  const toggleCandidate = useCallback((card: Card) => {
+    setCandidates((prev) =>
+      prev.some((c) => c.id === card.id)
+        ? prev.filter((c) => c.id !== card.id)
+        : [...prev, card],
+    )
+  }, [])
 
   useEffect(() => {
     api.getDeck(deckId).then((d) => {
@@ -154,21 +176,22 @@ export function DeckBuilder() {
 
   return (
     <div className="page deck-builder-page">
-      <header className="page__header">
-        <button className="btn btn--ghost" onClick={() => navigate('/decks')}>
-          ← 一覧へ
-        </button>
-        <input
-          className="deck-name-input"
-          value={deckName}
-          onChange={(e) => setDeckName(e.target.value)}
-          placeholder="デッキ名"
-        />
-        <span className="card-count">{total.toLocaleString()} 件</span>
-        <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
-          {saving ? '保存中...' : '保存'}
-        </button>
-      </header>
+      <AppHeader
+        right={
+          <>
+            <input
+              className="deck-name-input"
+              value={deckName}
+              onChange={(e) => setDeckName(e.target.value)}
+              placeholder="デッキ名"
+            />
+            <span className="card-count">{total.toLocaleString()} 件</span>
+            <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
+              {saving ? '保存中...' : '保存'}
+            </button>
+          </>
+        }
+      />
 
       {errors.length > 0 && (
         <ul className="deck-errors-banner">
@@ -184,7 +207,7 @@ export function DeckBuilder() {
           {deck.leader && (
             <img src={`/image/${deck.leader.id}`} alt="" className="deck-strip__leader" />
           )}
-          <span className={totalCards === 50 ? 'count--ok' : 'count--ng'}>
+          <span className={totalCards === 50 ? 'count--ok' : totalCards > 50 ? 'count--ng' : 'count--warn'}>
             {totalCards} / 50 枚
           </span>
           <span className="deck-strip__hint">クリックで詳細・枚数変更</span>
@@ -206,6 +229,56 @@ export function DeckBuilder() {
             ))
           )}
         </div>
+      </div>
+
+      {/* 採用候補カード */}
+      <div className="candidate-strip">
+        <div className="candidate-strip__bar">
+          <button
+            className="btn btn--ghost candidate-strip__toggle"
+            onClick={() => setCandidatesOpen((v) => !v)}
+          >
+            {candidatesOpen ? '▲' : '▼'} 採用候補 ({candidates.length})
+          </button>
+          {candidates.length > 0 && (
+            <button
+              className="btn btn--ghost candidate-strip__clear"
+              onClick={() => setCandidates([])}
+            >
+              クリア
+            </button>
+          )}
+        </div>
+        {candidatesOpen && (
+          <div className="candidate-strip__scroll">
+            {candidates.length === 0 ? (
+              <span className="candidate-strip__empty">カードモーダルから候補に追加できます</span>
+            ) : (
+              candidates.map((card) => (
+                <div
+                  key={card.id}
+                  className="candidate-strip__item"
+                  onClick={() => openCardModal(card)}
+                  title={card.name ?? card.name_en ?? ''}
+                >
+                  <img
+                    src={`/image/${card.id}`}
+                    alt={card.name ?? card.name_en ?? ''}
+                    onError={(e) => {
+                      ;(e.currentTarget as HTMLImageElement).src =
+                        "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='140' viewBox='0 0 100 140'%3E%3Crect width='100' height='140' rx='5' fill='%230d0d1f'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='28' fill='%23333' text-anchor='middle' dominant-baseline='middle'%3E%3F%3C/text%3E%3C/svg%3E"
+                    }}
+                  />
+                  <button
+                    className="candidate-strip__remove"
+                    onClick={(e) => { e.stopPropagation(); toggleCandidate(card) }}
+                    title="候補から削除"
+                  >✕</button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       <div className="deck-builder-layout">
@@ -371,6 +444,12 @@ export function DeckBuilder() {
                   }
                 >
                   {applyBtnLabel}
+                </button>
+                <button
+                  className={`btn${candidates.some((c) => c.id === selectedCard.id) ? ' btn--candidate-active' : ''}`}
+                  onClick={() => toggleCandidate(selectedCard)}
+                >
+                  {candidates.some((c) => c.id === selectedCard.id) ? '★ 候補中' : '☆ 候補に追加'}
                 </button>
                 <button className="btn" onClick={() => setSelectedCard(null)}>
                   閉じる

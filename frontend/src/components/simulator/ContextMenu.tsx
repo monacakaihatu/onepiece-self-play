@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useGameStore } from '../../store/gameStore'
+import { useGameStore } from '../../context/GameStoreContext'
 import type { ZoneId } from '../../types/game'
 
 const MOVE_ZONES: { label: string; zone: ZoneId }[] = [
@@ -14,7 +14,12 @@ const MOVE_ZONES: { label: string; zone: ZoneId }[] = [
 export function ContextMenu() {
   const contextMenu = useGameStore((s) => s.contextMenu)
   const cards = useGameStore((s) => s.cards)
-  const { closeContextMenu, moveCard, toggleRest, adjustPower, resetPower, detachAllDon } = useGameStore.getState()
+  const closeContextMenu = useGameStore((s) => s.closeContextMenu)
+  const moveCard = useGameStore((s) => s.moveCard)
+  const toggleRest = useGameStore((s) => s.toggleRest)
+  const adjustPower = useGameStore((s) => s.adjustPower)
+  const resetPower = useGameStore((s) => s.resetPower)
+  const detachAllDon = useGameStore((s) => s.detachAllDon)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -34,7 +39,6 @@ export function ContextMenu() {
   const card = cards[instanceId]
   if (!card) return null
 
-  // Clamp position to viewport
   const menuW = 200
   const menuH = 320
   const left = Math.min(x, window.innerWidth - menuW - 8)
@@ -59,13 +63,14 @@ export function ContextMenu() {
       style={{ left, top }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="sim-context-menu__title">
-        {card.card.name ?? card.card.name_en}
-      </div>
+      <div className="sim-context-menu__title">{card.card.name ?? card.card.name_en}</div>
 
       <button
         className="sim-context-menu__item"
-        onClick={() => { toggleRest(instanceId); closeContextMenu() }}
+        onClick={() => {
+          toggleRest(instanceId)
+          closeContextMenu()
+        }}
       >
         {card.rested ? 'アクティブ (立てる)' : 'レスト (横にする)'}
       </button>
@@ -78,7 +83,10 @@ export function ContextMenu() {
           <button
             key={d}
             className="sim-context-menu__item sim-context-menu__item--sm"
-            onClick={() => { adjustPower(instanceId, d); closeContextMenu() }}
+            onClick={() => {
+              adjustPower(instanceId, d)
+              closeContextMenu()
+            }}
           >
             {d}
           </button>
@@ -87,7 +95,10 @@ export function ContextMenu() {
           <button
             key={d}
             className="sim-context-menu__item sim-context-menu__item--sm"
-            onClick={() => { adjustPower(instanceId, d); closeContextMenu() }}
+            onClick={() => {
+              adjustPower(instanceId, d)
+              closeContextMenu()
+            }}
           >
             +{d}
           </button>
@@ -96,7 +107,10 @@ export function ContextMenu() {
       {card.powerMod !== 0 && (
         <button
           className="sim-context-menu__item"
-          onClick={() => { resetPower(instanceId); closeContextMenu() }}
+          onClick={() => {
+            resetPower(instanceId)
+            closeContextMenu()
+          }}
         >
           パワーリセット
         </button>
@@ -105,7 +119,10 @@ export function ContextMenu() {
       {card.donAttached > 0 && (
         <button
           className="sim-context-menu__item"
-          onClick={() => { detachAllDon(instanceId); closeContextMenu() }}
+          onClick={() => {
+            detachAllDon(instanceId)
+            closeContextMenu()
+          }}
         >
           ドン!! を全て外す
         </button>
@@ -115,11 +132,7 @@ export function ContextMenu() {
 
       <div className="sim-context-menu__label">移動</div>
       {MOVE_ZONES.filter((z) => z.zone !== card.zone).map(({ label, zone }) => (
-        <button
-          key={zone}
-          className="sim-context-menu__item"
-          onClick={() => handleMove(zone)}
-        >
+        <button key={zone} className="sim-context-menu__item" onClick={() => handleMove(zone)}>
           {label}
         </button>
       ))}

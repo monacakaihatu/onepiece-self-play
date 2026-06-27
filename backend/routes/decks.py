@@ -19,8 +19,8 @@ async def _validate_deck(db, leader: Card, cards: list[DeckCardItem]) -> list[st
     errors = []
 
     total = sum(item.quantity for item in cards)
-    if total != 50:
-        errors.append(f"メインデッキは50枚ちょうど必要です（現在 {total} 枚）")
+    if total > 50:
+        errors.append(f"メインデッキは50枚以内にしてください（現在 {total} 枚）")
 
     name_counts: dict[str, int] = {}
     for item in cards:

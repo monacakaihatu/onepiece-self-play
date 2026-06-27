@@ -15,6 +15,8 @@ export interface Card {
   attribute: string | null
   life: string | null
   rarity: string | null
+  block: string | null
+  expansion_name: string | null
 }
 
 export interface DeckCardItem {
@@ -55,6 +57,7 @@ export interface CardFilters {
   category?: string[]
   exclude_category?: string[]
   set_code?: string[]
+  block?: string[]
   rarity?: string[]
   sub_types?: string
   sort?: string

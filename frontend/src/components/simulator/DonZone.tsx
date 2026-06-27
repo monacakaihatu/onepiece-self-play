@@ -1,10 +1,9 @@
 import { useDroppable } from '@dnd-kit/core'
-import { useGameStore } from '../../store/gameStore'
+import { useGameStore } from '../../context/GameStoreContext'
 
 export function DonZone() {
   const donTokens = useGameStore((s) => s.donTokens)
-  const { gainDon } = useGameStore.getState()
-
+  const gainDon = useGameStore((s) => s.gainDon)
   const { setNodeRef, isOver } = useDroppable({ id: 'don_return' })
 
   const gainedCount = donTokens.filter((d) => d.used || d.attachedTo).length

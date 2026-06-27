@@ -1,4 +1,4 @@
-import { useGameStore } from '../../store/gameStore'
+import { useGameStore } from '../../context/GameStoreContext'
 
 export function CardPreviewOverlay() {
   const previewCard = useGameStore((s) => s.previewCard)
@@ -28,8 +28,11 @@ export function CardPreviewOverlay() {
               <span className="sim-preview-stat">コスト: {card.cost}</span>
             )}
             {displayPower !== null && (
-              <span className={`sim-preview-stat ${powerMod !== 0 ? 'sim-preview-stat--modified' : ''}`}>
-                パワー: {displayPower.toLocaleString()}{powerMod !== 0 ? ` (${powerMod > 0 ? '+' : ''}${powerMod})` : ''}
+              <span
+                className={`sim-preview-stat ${powerMod !== 0 ? 'sim-preview-stat--modified' : ''}`}
+              >
+                パワー: {displayPower.toLocaleString()}
+                {powerMod !== 0 ? ` (${powerMod > 0 ? '+' : ''}${powerMod})` : ''}
               </span>
             )}
             {card.counter !== null && (

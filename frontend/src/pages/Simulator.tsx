@@ -8,7 +8,10 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import { useGameStore } from '../store/gameStore'
+import { useStore } from 'zustand'
+import { singletonGameStore } from '../store/gameStore'
+import { GameStoreProvider } from '../context/GameStoreContext'
+import { AppHeader } from '../components/AppHeader'
 import type { ZoneId } from '../types/game'
 import { LeftPanel } from '../components/simulator/LeftPanel'
 import { CenterField } from '../components/simulator/CenterField'
@@ -25,11 +28,13 @@ const VALID_ZONES: ZoneId[] = [
 export function Simulator() {
   const { deckId } = useParams<{ deckId: string }>()
   const navigate = useNavigate()
-  const initialized = useGameStore((s) => s.initialized)
-  const loading = useGameStore((s) => s.loading)
-  const error = useGameStore((s) => s.error)
+
+  const initialized = useStore(singletonGameStore, (s) => s.initialized)
+  const loading = useStore(singletonGameStore, (s) => s.loading)
+  const error = useStore(singletonGameStore, (s) => s.error)
+
   const { initGame, moveCard, drawCard, refreshAll, nextPhase, undo, redo, closeContextMenu, returnDon } =
-    useGameStore.getState()
+    singletonGameStore.getState()
 
   useEffect(() => {
     if (!deckId) return
@@ -38,7 +43,6 @@ export function Simulator() {
     initGame(id)
   }, [deckId])
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName
@@ -49,25 +53,17 @@ export function Simulator() {
         nextPhase()
         return
       }
-      if (e.key === 'd' || e.key === 'D') {
-        if (!e.ctrlKey && !e.metaKey) {
-          drawCard(1)
-          return
-        }
+      if ((e.key === 'd' || e.key === 'D') && !e.ctrlKey && !e.metaKey) {
+        drawCard(1)
+        return
       }
-      if (e.key === 'r' || e.key === 'R') {
-        if (!e.ctrlKey && !e.metaKey) {
-          refreshAll()
-          return
-        }
+      if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey) {
+        refreshAll()
+        return
       }
       if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault()
-        if (e.shiftKey) {
-          redo()
-        } else {
-          undo()
-        }
+        e.shiftKey ? redo() : undo()
         return
       }
       if (e.key === 'y' && (e.ctrlKey || e.metaKey)) {
@@ -77,7 +73,7 @@ export function Simulator() {
       }
       if (e.key === 'Escape') {
         closeContextMenu()
-        useGameStore.getState().setPreview(null)
+        singletonGameStore.getState().setPreview(null)
       }
     }
     window.addEventListener('keydown', handler)
@@ -139,24 +135,20 @@ export function Simulator() {
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="sim-root" onContextMenu={(e) => e.preventDefault()}>
-        <PhaseBar />
-        <div className="sim-board">
-          <LeftPanel />
-          <CenterField />
-          <RightPanel />
+    <GameStoreProvider store={singletonGameStore}>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="sim-root" onContextMenu={(e) => e.preventDefault()}>
+          <AppHeader back={{ to: '/decks', label: '一覧' }} />
+          <PhaseBar />
+          <div className="sim-board">
+            <LeftPanel />
+            <CenterField />
+            <RightPanel />
+          </div>
+          <ContextMenu />
+          <CardPreviewOverlay />
         </div>
-        <ContextMenu />
-        <CardPreviewOverlay />
-        <button
-          className="btn btn--ghost sim-back-btn"
-          onClick={() => navigate('/')}
-          title="デッキ一覧へ"
-        >
-          ← 一覧
-        </button>
-      </div>
-    </DndContext>
+      </DndContext>
+    </GameStoreProvider>
   )
 }

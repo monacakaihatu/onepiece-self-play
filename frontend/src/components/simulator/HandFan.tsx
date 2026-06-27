@@ -1,5 +1,5 @@
 import { AnimatePresence } from 'framer-motion'
-import { useGameStore } from '../../store/gameStore'
+import { useGameStore } from '../../context/GameStoreContext'
 import { GameCardDisplay } from './GameCardDisplay'
 
 export function HandFan() {
@@ -40,11 +40,7 @@ export function HandFan() {
                 marginLeft: -45,
               }}
             >
-              <GameCardDisplay
-                gameCard={card}
-                size="md"
-                className="sim-hand-card"
-              />
+              <GameCardDisplay gameCard={card} size="md" className="sim-hand-card" />
             </div>
           )
         })}

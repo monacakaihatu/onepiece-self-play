@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Card, CardFilters } from '../types'
 import { CardGrid } from '../components/CardGrid'
 import { CardDetail } from '../components/CardDetail'
 import { SearchBar } from '../components/SearchBar'
 import { FilterPanel } from '../components/FilterPanel'
+import { AppHeader } from '../components/AppHeader'
 
 const PAGE_SIZE = 100
 
@@ -30,7 +30,6 @@ const SORT_OPTIONS = [
 ]
 
 export function CardBrowser() {
-  const navigate = useNavigate()
   const [cards, setCards] = useState<Card[]>([])
   const [total, setTotal] = useState(0)
   const [filters, setFilters] = useState<CardFilters>({ limit: PAGE_SIZE, offset: 0, sort: 'id' })
@@ -38,6 +37,7 @@ export function CardBrowser() {
   const [hasMore, setHasMore] = useState(true)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [colsOverride, setColsOverride] = useState<number | undefined>(undefined)
+  const [showFilters, setShowFilters] = useState(false)
 
   const fetchCards = useCallback(async (f: CardFilters, append = false) => {
     setLoading(true)
@@ -69,13 +69,10 @@ export function CardBrowser() {
 
   return (
     <div className="page">
-      <header className="page__header">
-        <h1>カード一覧</h1>
-        <span className="card-count">{total.toLocaleString()} 件</span>
-        <button className="btn btn--ghost" onClick={() => navigate('/decks')}>
-          デッキ一覧
-        </button>
-      </header>
+      <AppHeader
+        title="カード一覧"
+        right={<span className="card-count">{total.toLocaleString()} 件</span>}
+      />
 
       <div className="deck-builder-layout">
         <div className="deck-builder-left">
@@ -107,8 +104,15 @@ export function CardBrowser() {
                   </button>
                 ))}
               </div>
+              <button
+                className={`btn search-toggle-btn${showFilters ? ' search-toggle-btn--open' : ''}`}
+                onClick={() => setShowFilters((v) => !v)}
+                title={showFilters ? '絞り込みを閉じる' : '絞り込みを開く'}
+              >
+                {showFilters ? '▲ 絞り込み' : '▼ 絞り込み'}
+              </button>
             </div>
-            <FilterPanel filters={filters} onChange={handleFilterChange} />
+            {showFilters && <FilterPanel filters={filters} onChange={handleFilterChange} />}
           </div>
 
           <div className="card-grid-wrap">

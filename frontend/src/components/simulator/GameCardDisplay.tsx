@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { motion } from 'framer-motion'
-import { useGameStore } from '../../store/gameStore'
+import { useGameStore } from '../../context/GameStoreContext'
 import type { GameCard } from '../../types/game'
 
 interface Props {
@@ -28,7 +28,8 @@ export function GameCardDisplay({
   disableDrag = false,
 }: Props) {
   const { instanceId, card, rested, faceUp, powerMod, donAttached } = gameCard
-  const { setPreview, openContextMenu } = useGameStore.getState()
+  const setPreview = useGameStore((s) => s.setPreview)
+  const openContextMenu = useGameStore((s) => s.openContextMenu)
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -89,12 +90,7 @@ export function GameCardDisplay({
       layoutId={instanceId}
       ref={setNodeRef}
       className={`sim-card ${getColorClass()} ${rested ? 'sim-card--rested' : ''} ${isDragging ? 'sim-card--dragging' : ''} ${className}`}
-      style={{
-        width,
-        height,
-        ...dragStyle,
-        ...style,
-      }}
+      style={{ width, height, ...dragStyle, ...style }}
       {...attributes}
       {...listeners}
       onContextMenu={handleContextMenu}
@@ -120,14 +116,14 @@ export function GameCardDisplay({
       )}
 
       {showPower && faceUp && displayPower !== null && (
-        <div className={`sim-card__power ${powerMod > 0 ? 'sim-card__power--up' : powerMod < 0 ? 'sim-card__power--down' : ''}`}>
+        <div
+          className={`sim-card__power ${powerMod > 0 ? 'sim-card__power--up' : powerMod < 0 ? 'sim-card__power--down' : ''}`}
+        >
           {displayPower >= 1000 ? `${displayPower / 1000}k` : displayPower}
         </div>
       )}
 
-      {donAttached > 0 && (
-        <div className="sim-card__don-count">+{donAttached}</div>
-      )}
+      {donAttached > 0 && <div className="sim-card__don-count">+{donAttached}</div>}
 
       {rested && <div className="sim-card__rest-overlay" />}
     </motion.div>

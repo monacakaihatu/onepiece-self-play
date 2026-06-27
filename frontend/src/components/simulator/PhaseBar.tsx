@@ -1,4 +1,4 @@
-import { useGameStore } from '../../store/gameStore'
+import { useGameStore } from '../../context/GameStoreContext'
 import { PHASE_LABELS, type GamePhase } from '../../types/game'
 
 const PHASES: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'battle', 'end']
