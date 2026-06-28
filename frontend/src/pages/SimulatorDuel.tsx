@@ -20,6 +20,7 @@ import { RightPanel } from '../components/simulator/RightPanel'
 import { PhaseBar } from '../components/simulator/PhaseBar'
 import { ContextMenu } from '../components/simulator/ContextMenu'
 import { CardPreviewOverlay } from '../components/simulator/CardPreviewOverlay'
+import { DeckTopModal } from '../components/simulator/DeckTopModal'
 
 const VALID_ZONES: ZoneId[] = [
   'deck', 'hand', 'leader', 'field', 'stage',
@@ -129,6 +130,7 @@ function GameBoard({
           </div>
           <ContextMenu />
           <CardPreviewOverlay />
+          <DeckTopModal />
         </div>
       </DndContext>
     </GameStoreProvider>
@@ -184,12 +186,15 @@ export function SimulatorDuel() {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
 
-      const { nextPhase, drawCard, refreshAll, undo, redo, closeContextMenu, setPreview } =
+      const { endTurn, drawCard, refreshAll, undo, redo, closeContextMenu, setPreview, deckTopModal } =
         activeStore.getState()
+
+      // Block most actions while the deck-peek modal is open
+      if (deckTopModal) return
 
       if (e.code === 'Space' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault()
-        nextPhase()
+        endTurn()
         return
       }
       if ((e.key === 'd' || e.key === 'D') && !e.ctrlKey && !e.metaKey) {

@@ -5,13 +5,16 @@ import { GameCardDisplay } from './GameCardDisplay'
 
 function DeckZone() {
   const cards = useGameStore((s) => s.cards)
+  const deckOrder = useGameStore((s) => s.deckOrder)
   const drawCard = useGameStore((s) => s.drawCard)
   const shuffleDeck = useGameStore((s) => s.shuffleDeck)
+  const openDeckTopModal = useGameStore((s) => s.openDeckTopModal)
   const { setNodeRef, isOver } = useDroppable({ id: 'deck' })
 
   const deckCards = Object.values(cards).filter((c) => c.zone === 'deck')
   const count = deckCards.length
-  const topCard = deckCards[0]
+  const topCardId = deckOrder[0]
+  const topCard = topCardId ? cards[topCardId] : undefined
 
   return (
     <div className="sim-left-zone">
@@ -35,6 +38,34 @@ function DeckZone() {
       <button className="btn btn--sm sim-left-btn" onClick={() => drawCard(1)}>
         ドロー [D]
       </button>
+
+      <div className="sim-deck-peek-buttons">
+        <div className="sim-deck-peek-label">確認</div>
+        <button
+          className="btn btn--sm sim-left-btn"
+          onClick={() => openDeckTopModal(2)}
+          disabled={count < 2}
+          title="デッキトップ2枚を確認"
+        >
+          上2枚
+        </button>
+        <button
+          className="btn btn--sm sim-left-btn"
+          onClick={() => openDeckTopModal(3)}
+          disabled={count < 3}
+          title="デッキトップ3枚を確認"
+        >
+          上3枚
+        </button>
+        <button
+          className="btn btn--sm sim-left-btn"
+          onClick={() => openDeckTopModal(5)}
+          disabled={count < 5}
+          title="デッキトップ5枚を確認"
+        >
+          上5枚
+        </button>
+      </div>
     </div>
   )
 }

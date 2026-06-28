@@ -39,7 +39,7 @@ function DeckPickerPanel({
                 {selected.leader.name ?? selected.leader.name_en}
               </div>
             )}
-            <div className={`setup-picker-chosen__count ${selected.selected.total_cards > 0 && selected.total_cards <= 50 ? 'count--ok' : 'count--ng'}`}>
+            <div className={`setup-picker-chosen__count ${selected.total_cards > 0 && selected.total_cards <= 50 ? 'count--ok' : 'count--ng'}`}>
               {selected.total_cards}/50 枚
             </div>
             <button className="btn btn--sm" onClick={() => onSelect(selected)}>

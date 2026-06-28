@@ -37,6 +37,11 @@ export function AppHeader({ back, title, right }: AppHeaderProps) {
         <span className="app-header__brand-name">VIVRE</span>
       </Link>
 
+      {back && (
+        <button className="btn btn--ghost app-header__back" onClick={handleBack}>
+          ← {backLabel}
+        </button>
+      )}
       {title && <h1 className="app-header__title">{title}</h1>}
 
       <div className="app-header__right">

@@ -1,9 +1,9 @@
 import { createStore } from 'zustand/vanilla'
 import { api } from '../api/client'
-import type { GameCard, GamePhase, GameSnapshot, DonToken, ZoneId } from '../types/game'
+import type { GameCard, GameSnapshot, DonToken, ZoneId, DeckTopModal } from '../types/game'
+import type { Card } from '../types/index'
 
 const MAX_HISTORY = 50
-const PHASE_ORDER: GamePhase[] = ['refresh', 'draw', 'don', 'main', 'battle', 'end']
 
 let _idCounter = 0
 function nanoid(prefix = 'c'): string {
@@ -12,8 +12,19 @@ function nanoid(prefix = 'c'): string {
 
 let _storeCounter = 0
 
-function buildDonTokens(storeId: string): DonToken[] {
-  return Array.from({ length: 10 }, (_, i) => ({
+function getDonMax(leader: Card | null): number {
+  if (!leader) return 10
+  const setCode = (leader.set_code ?? '').replace(/-/g, '').toUpperCase()
+  const isPurple =
+    (leader.color ?? '').includes('紫') ||
+    (leader.color ?? '').toLowerCase().includes('purple')
+  // OP-16 purple leader (エネル) has a max DON pool of 6
+  if (setCode === 'OP16' && isPurple) return 6
+  return 10
+}
+
+function buildDonTokens(storeId: string, count: number): DonToken[] {
+  return Array.from({ length: count }, (_, i) => ({
     id: `${storeId}-don-${i}`,
     used: false,
     attachedTo: undefined,
@@ -27,7 +38,6 @@ function snapshotState(state: GameStore): GameSnapshot {
     lifeCards: [...state.lifeCards],
     deckOrder: [...state.deckOrder],
     turnNumber: state.turnNumber,
-    phase: state.phase,
   }
 }
 
@@ -35,7 +45,7 @@ export interface GameStore {
   deckId: number | null
   deckName: string
   turnNumber: number
-  phase: GamePhase
+  donMax: number
   cards: Record<string, GameCard>
   donTokens: DonToken[]
   lifeCards: string[]
@@ -46,6 +56,7 @@ export interface GameStore {
 
   previewCard: GameCard | null
   contextMenu: { instanceId: string; x: number; y: number } | null
+  deckTopModal: DeckTopModal | null
 
   _history: GameSnapshot[]
   _future: GameSnapshot[]
@@ -76,6 +87,11 @@ export interface GameStore {
   drawCard: (count?: number) => void
   drawToLife: (count: number) => void
 
+  // Deck top peek
+  openDeckTopModal: (count: number) => void
+  closeDeckTopModal: () => void
+  commitDeckTopModal: (handIds: string[], gravIds: string[], deckBottomIds: string[]) => void
+
   // Don!!
   gainDon: (count?: number) => void
   attachDon: (donId: string, instanceId: string) => void
@@ -84,9 +100,8 @@ export interface GameStore {
   refreshDon: () => void
   returnDon: (instanceId: string) => void
 
-  // Phase/turn
-  nextPhase: () => void
-  setPhase: (phase: GamePhase) => void
+  // Turn management (free-form, no rigid phases)
+  endTurn: () => void
 
   // UI
   setPreview: (card: GameCard | null) => void
@@ -101,9 +116,9 @@ export function createGameStore() {
     deckId: null,
     deckName: '',
     turnNumber: 1,
-    phase: 'refresh',
+    donMax: 10,
     cards: {},
-    donTokens: buildDonTokens(storeId),
+    donTokens: buildDonTokens(storeId, 10),
     lifeCards: [],
     deckOrder: [],
     initialized: false,
@@ -111,6 +126,7 @@ export function createGameStore() {
     error: null,
     previewCard: null,
     contextMenu: null,
+    deckTopModal: null,
     _history: [],
     _future: [],
 
@@ -173,17 +189,20 @@ export function createGameStore() {
           cards[id] = { ...cards[id], zone: 'hand', faceUp: true }
         }
 
+        const donMax = getDonMax(deck.leader ?? null)
+
         set({
           deckId,
           deckName: deck.name,
           cards,
           lifeCards,
           deckOrder: deckOrder.slice(5),
-          donTokens: buildDonTokens(storeId),
+          donTokens: buildDonTokens(storeId, donMax),
+          donMax,
           turnNumber: 1,
-          phase: 'refresh',
           initialized: true,
           loading: false,
+          deckTopModal: null,
           _history: [],
           _future: [],
         })
@@ -200,7 +219,6 @@ export function createGameStore() {
       if (deckId) get().initGame(deckId)
     },
 
-    // Return hand to deck, shuffle, redraw 5 (no history entry)
     mulligan: () => {
       set((s) => {
         const handIds = Object.values(s.cards)
@@ -248,6 +266,7 @@ export function createGameStore() {
         _future: [current, ..._future],
         previewCard: null,
         contextMenu: null,
+        deckTopModal: null,
       })
     },
 
@@ -262,6 +281,7 @@ export function createGameStore() {
         _future: _future.slice(1),
         previewCard: null,
         contextMenu: null,
+        deckTopModal: null,
       })
     },
 
@@ -300,7 +320,7 @@ export function createGameStore() {
         let newDonTokens = s.donTokens
         if (isLeavingFieldOrLeader) {
           newDonTokens = s.donTokens.map((d) =>
-            d.attachedTo === instanceId ? { ...d, used: false, attachedTo: undefined } : d
+            d.attachedTo === instanceId ? { ...d, attachedTo: undefined } : d
           )
         }
 
@@ -459,6 +479,42 @@ export function createGameStore() {
       })
     },
 
+    openDeckTopModal: (count) => {
+      set((s) => ({
+        deckTopModal: { peekedIds: s.deckOrder.slice(0, count) },
+      }))
+    },
+
+    closeDeckTopModal: () => {
+      set({ deckTopModal: null })
+    },
+
+    commitDeckTopModal: (handIds, gravIds, deckBottomIds) => {
+      get()._pushSnapshot()
+      set((s) => {
+        if (!s.deckTopModal) return {}
+        const allPeeked = s.deckTopModal.peekedIds
+        const updates: Record<string, GameCard> = {}
+
+        for (const id of handIds) {
+          if (s.cards[id]) updates[id] = { ...s.cards[id], zone: 'hand', faceUp: true }
+        }
+        for (const id of gravIds) {
+          if (s.cards[id]) updates[id] = { ...s.cards[id], zone: 'graveyard', faceUp: true }
+        }
+
+        // Remove all peeked from deckOrder, then append deck-bottom cards in chosen order
+        let newDeckOrder = s.deckOrder.filter((id) => !allPeeked.includes(id))
+        newDeckOrder = [...newDeckOrder, ...deckBottomIds]
+
+        return {
+          cards: { ...s.cards, ...updates },
+          deckOrder: newDeckOrder,
+          deckTopModal: null,
+        }
+      })
+    },
+
     gainDon: (count = 1) => {
       get()._pushSnapshot()
       set((s) => {
@@ -494,7 +550,7 @@ export function createGameStore() {
         if (!token?.attachedTo) return {}
         const instanceId = token.attachedTo
         const newTokens = s.donTokens.map((d) =>
-          d.id === donId ? { ...d, used: false, attachedTo: undefined } : d
+          d.id === donId ? { ...d, attachedTo: undefined } : d
         )
         const donCount = newTokens.filter((d) => d.attachedTo === instanceId).length
         return {
@@ -511,7 +567,7 @@ export function createGameStore() {
       get()._pushSnapshot()
       set((s) => {
         const newTokens = s.donTokens.map((d) =>
-          d.attachedTo === instanceId ? { ...d, used: false, attachedTo: undefined } : d
+          d.attachedTo === instanceId ? { ...d, attachedTo: undefined } : d
         )
         return {
           donTokens: newTokens,
@@ -520,6 +576,7 @@ export function createGameStore() {
       })
     },
 
+    // Full reset of DON pool (used for special effects or manual reset)
     refreshDon: () => {
       set((s) => ({
         donTokens: s.donTokens.map((d) => ({ ...d, used: false, attachedTo: undefined })),
@@ -537,7 +594,7 @@ export function createGameStore() {
       get()._pushSnapshot()
       set((s) => {
         const newTokens = s.donTokens.map((d) =>
-          d.attachedTo === instanceId ? { ...d, used: false, attachedTo: undefined } : d
+          d.attachedTo === instanceId ? { ...d, attachedTo: undefined } : d
         )
         const card = s.cards[instanceId]
         return {
@@ -547,65 +604,25 @@ export function createGameStore() {
       })
     },
 
-    nextPhase: () => {
+    // End turn: refresh all cards + detach DON (pool persists), increment turn
+    endTurn: () => {
       get()._pushSnapshot()
-      const { phase, turnNumber } = get()
-
-      if (phase === 'end') {
-        set((s) => {
-          const cardUpdates: Record<string, GameCard> = {}
-          for (const [id, card] of Object.entries(s.cards)) {
-            if (card.rested || card.donAttached > 0) {
-              cardUpdates[id] = { ...card, rested: false, donAttached: 0 }
-            }
+      set((s) => {
+        const cardUpdates: Record<string, GameCard> = {}
+        for (const [id, card] of Object.entries(s.cards)) {
+          const needsUpdate = card.rested || card.donAttached > 0
+          if (needsUpdate) {
+            cardUpdates[id] = { ...card, rested: false, donAttached: 0 }
           }
-          return {
-            turnNumber: turnNumber + 1,
-            phase: 'refresh',
-            cards: { ...s.cards, ...cardUpdates },
-            donTokens: s.donTokens.map((d) => ({ ...d, used: false, attachedTo: undefined })),
-          }
-        })
-        return
-      }
-
-      const idx = PHASE_ORDER.indexOf(phase)
-      const next = PHASE_ORDER[idx + 1]
-
-      if (next === 'draw') {
-        set((s) => {
-          const topId = s.deckOrder[0]
-          if (!topId) return { phase: next }
-          const card = s.cards[topId]
-          if (!card) return { phase: next }
-          return {
-            phase: next,
-            cards: { ...s.cards, [topId]: { ...card, zone: 'hand', faceUp: true } },
-            deckOrder: s.deckOrder.slice(1),
-          }
-        })
-        return
-      }
-
-      if (next === 'don') {
-        set((s) => {
-          let gained = 0
-          const donCount = Math.min(s.turnNumber + 1, 2)
-          const donTokens = s.donTokens.map((d) => {
-            if (!d.used && gained < donCount) { gained++; return { ...d, used: true } }
-            return d
-          })
-          return { phase: next, donTokens }
-        })
-        return
-      }
-
-      set({ phase: next })
-    },
-
-    setPhase: (phase) => {
-      get()._pushSnapshot()
-      set({ phase })
+        }
+        return {
+          turnNumber: s.turnNumber + 1,
+          cards: { ...s.cards, ...cardUpdates },
+          // Detach all DON from cards, but keep them in the pool (used stays true)
+          donTokens: s.donTokens.map((d) => ({ ...d, attachedTo: undefined })),
+          deckTopModal: null,
+        }
+      })
     },
 
     setPreview: (card) => set({ previewCard: card }),
