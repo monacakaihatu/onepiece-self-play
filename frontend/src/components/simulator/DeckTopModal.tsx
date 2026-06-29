@@ -165,7 +165,7 @@ export function DeckTopModal() {
               <div className="deck-top-modal__remaining-hint">
                 {remainingDest === 'deck_top'
                   ? '↑ 上の順番がデッキの一番上になります'
-                  : '↑ 上の順番がデッキ下の一番上（次に引く側）になります'}
+                  : '↑ 上の順番がデッキ下の一番上になります'}
               </div>
             )}
 
