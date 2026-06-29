@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useGameStore } from '../../context/GameStoreContext'
 import type { GameCard } from '../../types/game'
 
-type CardDest = 'hand' | 'graveyard' | null // null = remaining (goes back to deck bottom or trash)
+type CardDest = 'hand' | 'graveyard' | null // null = remaining
+type RemainingDest = 'deck_top' | 'deck_bottom' | 'graveyard'
 
 export function DeckTopModal() {
   const deckTopModal = useGameStore((s) => s.deckTopModal)
@@ -12,7 +13,7 @@ export function DeckTopModal() {
 
   const [assignments, setAssignments] = useState<Record<string, CardDest>>({})
   const [remainingOrder, setRemainingOrder] = useState<string[]>([])
-  const [remainingDest, setRemainingDest] = useState<'deck_bottom' | 'graveyard'>('deck_bottom')
+  const [remainingDest, setRemainingDest] = useState<RemainingDest>('deck_bottom')
 
   // Reset local state whenever the modal object itself changes (new open, or close+reopen with same cards)
   useEffect(() => {
@@ -70,10 +71,19 @@ export function DeckTopModal() {
     const gravIds = Object.entries(assignments)
       .filter(([, d]) => d === 'graveyard')
       .map(([id]) => id)
-    const deckBottomIds = remainingDest === 'deck_bottom' ? unassignedIds : []
-    const remainingGravIds = remainingDest === 'graveyard' ? unassignedIds : []
 
-    commitDeckTopModal(handIds, [...gravIds, ...remainingGravIds], deckBottomIds)
+    if (remainingDest === 'graveyard') {
+      commitDeckTopModal(handIds, [...gravIds, ...unassignedIds], [], 'bottom')
+    } else {
+      const dest = remainingDest === 'deck_top' ? 'top' : 'bottom'
+      commitDeckTopModal(handIds, gravIds, unassignedIds, dest)
+    }
+  }
+
+  const DEST_LABELS: Record<RemainingDest, string> = {
+    deck_top: 'デッキ上へ',
+    deck_bottom: 'デッキ下へ',
+    graveyard: 'トラッシュへ',
   }
 
   return (
@@ -130,23 +140,34 @@ export function DeckTopModal() {
           <div className="deck-top-modal__remaining">
             <div className="deck-top-modal__remaining-header">
               <span className="deck-top-modal__remaining-title">
-                残り {unassignedIds.length} 枚
+                残り {unassignedIds.length} 枚の送り先
               </span>
               <div className="deck-top-modal__remaining-dest">
-                <button
-                  className={`btn btn--sm ${remainingDest === 'deck_bottom' ? 'btn--primary' : ''}`}
-                  onClick={() => setRemainingDest('deck_bottom')}
-                >
-                  デッキ下へ
-                </button>
-                <button
-                  className={`btn btn--sm ${remainingDest === 'graveyard' ? 'btn--danger' : ''}`}
-                  onClick={() => setRemainingDest('graveyard')}
-                >
-                  トラッシュへ
-                </button>
+                {(['deck_top', 'deck_bottom', 'graveyard'] as RemainingDest[]).map((d) => (
+                  <button
+                    key={d}
+                    className={`btn btn--sm ${
+                      remainingDest === d
+                        ? d === 'graveyard'
+                          ? 'btn--danger'
+                          : 'btn--primary'
+                        : ''
+                    }`}
+                    onClick={() => setRemainingDest(d)}
+                  >
+                    {DEST_LABELS[d]}
+                  </button>
+                ))}
               </div>
             </div>
+
+            {remainingDest !== 'graveyard' && (
+              <div className="deck-top-modal__remaining-hint">
+                {remainingDest === 'deck_top'
+                  ? '↑ 上の順番がデッキの一番上になります'
+                  : '↑ 上の順番がデッキ下の一番上（次に引く側）になります'}
+              </div>
+            )}
 
             <div className="deck-top-modal__remaining-list">
               {unassignedIds.map((id, idx) => {

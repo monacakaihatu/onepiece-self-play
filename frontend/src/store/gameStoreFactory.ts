@@ -90,7 +90,7 @@ export interface GameStore {
   // Deck top peek
   openDeckTopModal: (count: number) => void
   closeDeckTopModal: () => void
-  commitDeckTopModal: (handIds: string[], gravIds: string[], deckBottomIds: string[]) => void
+  commitDeckTopModal: (handIds: string[], gravIds: string[], deckReturnIds: string[], deckReturnDest: 'top' | 'bottom') => void
 
   // Don!!
   gainDon: (count?: number) => void
@@ -489,7 +489,7 @@ export function createGameStore() {
       set({ deckTopModal: null })
     },
 
-    commitDeckTopModal: (handIds, gravIds, deckBottomIds) => {
+    commitDeckTopModal: (handIds, gravIds, deckReturnIds, deckReturnDest) => {
       get()._pushSnapshot()
       set((s) => {
         if (!s.deckTopModal) return {}
@@ -503,9 +503,12 @@ export function createGameStore() {
           if (s.cards[id]) updates[id] = { ...s.cards[id], zone: 'graveyard', faceUp: true }
         }
 
-        // Remove all peeked from deckOrder, then append deck-bottom cards in chosen order
-        let newDeckOrder = s.deckOrder.filter((id) => !allPeeked.includes(id))
-        newDeckOrder = [...newDeckOrder, ...deckBottomIds]
+        // Remove all peeked from deckOrder, then place returning cards at top or bottom
+        const rest = s.deckOrder.filter((id) => !allPeeked.includes(id))
+        const newDeckOrder =
+          deckReturnDest === 'top'
+            ? [...deckReturnIds, ...rest]
+            : [...rest, ...deckReturnIds]
 
         return {
           cards: { ...s.cards, ...updates },
