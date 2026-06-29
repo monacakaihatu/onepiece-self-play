@@ -163,9 +163,7 @@ export function DeckTopModal() {
 
             {remainingDest !== 'graveyard' && (
               <div className="deck-top-modal__remaining-hint">
-                {remainingDest === 'deck_top'
-                  ? '↑ 上の順番がデッキの一番上になります'
-                  : '↑ 上の順番がデッキ下の一番上になります'}
+                {remainingDest === 'deck_top' ? 'デッキ上に戻す' : 'デッキ下に戻す'}
               </div>
             )}
 
