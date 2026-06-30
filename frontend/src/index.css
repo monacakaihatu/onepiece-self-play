@@ -2299,76 +2299,6 @@ body {
   border-color: var(--accent);
   color: var(--accent);
 }
-.home-header__logo {
-  font-size: 32px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  color: var(--accent);
-  text-shadow: 0 0 32px rgba(245, 200, 66, 0.4);
-}
-.home-header__sub {
-  font-size: 14px;
-  color: var(--text2);
-  letter-spacing: 0.06em;
-}
-.home-features {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.home-feature-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: 200px;
-  padding: 32px 20px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  cursor: pointer;
-  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
-  text-align: center;
-  border-top: 3px solid var(--card-accent, var(--accent));
-}
-.home-feature-card:hover {
-  transform: translateY(-6px);
-  border-color: var(--card-accent, var(--accent));
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-}
-.home-feature-card__icon {
-  font-size: 40px;
-  line-height: 1;
-}
-.home-feature-card__title {
-  font-size: 17px;
-  font-weight: 800;
-  color: var(--text);
-}
-.home-feature-card__subtitle {
-  font-size: 11px;
-  color: var(--text3);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.home-feature-card__desc {
-  font-size: 12px;
-  color: var(--text2);
-  line-height: 1.5;
-}
-
-/* --- Search Toggle --- */
-.search-toggle-btn {
-  white-space: nowrap;
-  font-size: 12px;
-  padding: 5px 12px;
-}
-.search-toggle-btn--open {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
 /* ============================================================
    SIMULATOR SETUP PAGE
    ============================================================ */
@@ -3040,13 +2970,6 @@ body {
   margin: 0 2px;
 }
 
-/* Back button */
-.app-header__back {
-  font-size: 0.82rem;
-  padding: 4px 10px;
-  flex-shrink: 0;
-}
-
 /* Page title */
 .app-header__title {
   font-size: 0.92rem;
@@ -3308,4 +3231,148 @@ body {
 .chip--set.chip--active .chip__set-code,
 .chip--set.chip--active .chip__set-name {
   color: #000;
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+
+/* ── Tablet (≤900px) ── */
+@media (max-width: 900px) {
+  .setup-pickers {
+    flex-direction: column;
+  }
+  .setup-vs {
+    align-self: center;
+    padding: 0;
+  }
+  .deck-preview__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Mobile (≤640px) ── */
+@media (max-width: 640px) {
+  /* Page header: タイトル非表示で余白確保 */
+  .app-header__title {
+    display: none;
+  }
+
+  /* カード詳細モーダル: 縦積み */
+  .card-add-modal {
+    flex-direction: column;
+  }
+  .card-add-modal__img {
+    width: 100%;
+    max-width: 180px;
+    align-self: center;
+  }
+
+  /* ツールバー: 折り返し */
+  .toolbar-row {
+    flex-wrap: wrap;
+  }
+  .cols-toggle {
+    display: none;
+  }
+
+  /* デッキストリップ: 画像を小さく */
+  .deck-strip__item img {
+    width: 56px;
+  }
+  .candidate-strip__scroll {
+    min-height: 56px;
+  }
+
+  /* ホーム機能カード: 2列グリッドに */
+  .home-features {
+    gap: 12px;
+  }
+  .home-feature-card {
+    width: calc(50% - 6px);
+    padding: 20px 12px;
+  }
+  .home-feature-card__icon {
+    font-size: 28px;
+  }
+  .home-feature-card__title {
+    font-size: 14px;
+  }
+
+  /* デッキグリッド: 小さめカラム */
+  .deck-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    padding: 12px;
+    gap: 10px;
+  }
+
+  /* モーダル: パディング削減 */
+  .modal-content {
+    padding: 16px;
+    width: 96%;
+  }
+  .modal-content--wide {
+    max-width: 98vw;
+  }
+
+  /* マリガンパネル: 縦積み */
+  .duel-mulligan-panels {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* セットアップページ: 縦積み */
+  .setup-pickers {
+    flex-direction: column;
+  }
+  .setup-vs {
+    align-self: center;
+    padding: 0;
+  }
+  .setup-picker-panel {
+    padding: 12px;
+  }
+  .setup-order__options {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* フェーズバー: 横スクロール */
+  .sim-phase-bar__phases {
+    overflow-x: auto;
+  }
+  .sim-phase-bar {
+    gap: 4px;
+    padding: 4px 8px;
+  }
+
+  /* 一人回しサイドバー: 下に配置 */
+  .solitaire-main {
+    flex-direction: column;
+  }
+  .solitaire-sidebar {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+    max-height: 220px;
+  }
+  .hand-cards {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .hand-card {
+    flex-shrink: 0;
+    min-width: 140px;
+  }
+
+  /* デッキビルダー: ストリップ縮小 */
+  .deck-builder-toolbar {
+    padding: 6px 10px;
+  }
+  .deck-strip__scroll {
+    padding: 6px 10px;
+  }
 }
