@@ -1678,10 +1678,11 @@ body {
 }
 
 /* Center field */
-.sim-center-top {
+.sim-center-bottom {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+  margin-top: 4px;
 }
 .sim-leader-area {
   background: var(--sim-panel);
@@ -1987,10 +1988,103 @@ body {
   opacity: 0.35;
   border-color: var(--sim-don-attached);
 }
+.sim-don-card--rested {
+  transform: rotate(90deg);
+  margin: 7px 7px;
+  border-color: #60a5fa;
+}
 .sim-don-empty {
   font-size: 11px;
   color: var(--text3);
   align-self: center;
+}
+
+/* Opponent board strip (top, rotated 180°) */
+.opp-strip {
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--sim-border);
+  padding: 4px 8px;
+  transform: rotate(180deg);
+  flex-shrink: 0;
+}
+.opp-strip__inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+}
+.opp-strip__don {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.opp-strip__don-img {
+  width: 28px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--sim-don-available);
+}
+.opp-strip__don-count {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sim-don-available);
+}
+.opp-strip__leader {
+  flex-shrink: 0;
+}
+.opp-strip__card {
+  width: 32px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--sim-border);
+  display: block;
+}
+.opp-strip__card--rested {
+  transform: rotate(90deg);
+  margin: 6px 6px;
+}
+.opp-strip__card--empty {
+  background: var(--sim-panel);
+}
+.opp-strip__chars {
+  display: flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  flex: 1;
+  align-items: center;
+}
+.opp-strip__empty {
+  font-size: 10px;
+  color: var(--text3);
+}
+.opp-strip__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+  align-items: flex-end;
+}
+.opp-strip__order {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.opp-strip__order--first { background: #7c3aed; color: #fff; }
+.opp-strip__order--second { background: #0369a1; color: #fff; }
+.opp-strip__name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text1);
+}
+.opp-strip__stat {
+  font-size: 10px;
+  color: var(--text2);
 }
 
 /* Deck peek buttons */

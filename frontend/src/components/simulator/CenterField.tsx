@@ -51,7 +51,7 @@ function PlayerField() {
 
   return (
     <div ref={setNodeRef} className={`sim-player-field ${isOver ? 'sim-zone--over' : ''}`}>
-      <div className="sim-zone-label">フィールド ({fieldCards.length}/10)</div>
+      <div className="sim-zone-label">キャラエリア ({fieldCards.length}/10)</div>
       <div className="sim-field-cards">
         <AnimatePresence>
           {fieldCards.map((card) => (
@@ -90,11 +90,11 @@ export function CenterField() {
   return (
     <main className="sim-center-panel">
       <OppField />
-      <div className="sim-center-top">
+      <PlayerField />
+      <div className="sim-center-bottom">
         <LeaderArea />
         <StageArea />
       </div>
-      <PlayerField />
       <DonZone />
     </main>
   )

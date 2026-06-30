@@ -6,11 +6,12 @@ export function DonZone() {
   const donMax = useGameStore((s) => s.donMax)
   const gainDon = useGameStore((s) => s.gainDon)
   const removeDon = useGameStore((s) => s.removeDon)
+  const toggleRestDon = useGameStore((s) => s.toggleRestDon)
   const { setNodeRef, isOver } = useDroppable({ id: 'don_return' })
 
   const gainedTokens = donTokens.filter((d) => d.used || d.attachedTo)
   const gainedCount = gainedTokens.length
-  const availableCount = donTokens.filter((d) => d.used && !d.attachedTo).length
+  const availableCount = donTokens.filter((d) => d.used && !d.attachedTo && !d.rested).length
   const canGain = donTokens.some((d) => !d.used && !d.attachedTo)
   const canRemove = donTokens.some((d) => d.used && !d.attachedTo)
 
@@ -46,15 +47,21 @@ export function DonZone() {
       </div>
 
       <div className="sim-don-cards">
-        {gainedTokens.map((token) => (
-          <div
-            key={token.id}
-            className={`sim-don-card ${token.attachedTo ? 'sim-don-card--attached' : ''}`}
-            title={token.attachedTo ? '付与中' : '使用可能'}
-          >
-            <img src="/Don.jpeg" alt="DON!!" draggable={false} />
-          </div>
-        ))}
+        {gainedTokens.map((token) => {
+          const isAttached = !!token.attachedTo
+          const isRested = token.rested && !isAttached
+          return (
+            <div
+              key={token.id}
+              className={`sim-don-card ${isAttached ? 'sim-don-card--attached' : ''} ${isRested ? 'sim-don-card--rested' : ''}`}
+              title={isAttached ? '付与中' : isRested ? 'レスト中（クリックで解除）' : 'クリックでレスト'}
+              onClick={() => !isAttached && toggleRestDon(token.id)}
+              style={{ cursor: isAttached ? 'default' : 'pointer' }}
+            >
+              <img src="/Don.jpeg" alt="DON!!" draggable={false} />
+            </div>
+          )
+        })}
         {gainedCount === 0 && (
           <div className="sim-don-empty">ドン!!なし</div>
         )}

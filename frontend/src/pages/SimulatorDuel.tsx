@@ -106,6 +106,74 @@ function MulliganPanel({
   )
 }
 
+// Read-only strip showing opponent's field (rotated 180°)
+function OppBoardStrip({ store, name, order }: { store: GameStoreApi; name: string; order: '先行' | '後攻' }) {
+  const cards = useStore(store, (s) => s.cards)
+  const donTokens = useStore(store, (s) => s.donTokens)
+  const turnNumber = useStore(store, (s) => s.turnNumber)
+
+  const handCount = Object.values(cards).filter((c) => c.zone === 'hand').length
+  const fieldCards = Object.values(cards)
+    .filter((c) => c.zone === 'field')
+    .sort((a, b) => (a.fieldIndex ?? 0) - (b.fieldIndex ?? 0))
+  const leader = Object.values(cards).find((c) => c.zone === 'leader')
+  const deckCount = Object.values(cards).filter((c) => c.zone === 'deck').length
+  const lifeCount = Object.values(cards).filter((c) => c.zone === 'life').length
+
+  const gainedDon = donTokens.filter((d) => d.used || d.attachedTo).length
+  const availDon = donTokens.filter((d) => d.used && !d.attachedTo && !d.rested).length
+
+  return (
+    <div className="opp-strip">
+      <div className="opp-strip__inner">
+        {/* DON area */}
+        <div className="opp-strip__don">
+          <img src="/Don.jpeg" alt="DON" className="opp-strip__don-img" />
+          <span className="opp-strip__don-count">{availDon}/{gainedDon}</span>
+        </div>
+
+        {/* Leader */}
+        <div className="opp-strip__leader">
+          {leader ? (
+            <img
+              src={`/image/${leader.card.id}`}
+              alt={leader.card.name ?? ''}
+              className={`opp-strip__card ${leader.rested ? 'opp-strip__card--rested' : ''}`}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
+            />
+          ) : (
+            <div className="opp-strip__card opp-strip__card--empty" />
+          )}
+        </div>
+
+        {/* Character area */}
+        <div className="opp-strip__chars">
+          {fieldCards.map((card) => (
+            <img
+              key={card.instanceId}
+              src={`/image/${card.card.id}`}
+              alt={card.card.name ?? ''}
+              className={`opp-strip__card ${card.rested ? 'opp-strip__card--rested' : ''}`}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
+            />
+          ))}
+          {fieldCards.length === 0 && <span className="opp-strip__empty">キャラなし</span>}
+        </div>
+
+        {/* Info */}
+        <div className="opp-strip__info">
+          <span className={`opp-strip__order opp-strip__order--${order === '先行' ? 'first' : 'second'}`}>{order}</span>
+          <span className="opp-strip__name">{name}</span>
+          <span className="opp-strip__stat">T{turnNumber}</span>
+          <span className="opp-strip__stat">手札 {handCount}</span>
+          <span className="opp-strip__stat">山札 {deckCount}</span>
+          <span className="opp-strip__stat">ライフ {lifeCount}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function GameBoard({
   store,
   onDragEnd,
@@ -177,7 +245,7 @@ export function SimulatorDuel() {
     }
   }, [keptFirst, keptSecond])
 
-  // Keyboard shortcuts for active player
+  // Keyboard shortcuts for active player; Space auto-switches player
   useEffect(() => {
     if (phase !== 'game') return
     const activeStore = activePlayer === 'first' ? storeFirst : storeSecond
@@ -195,6 +263,7 @@ export function SimulatorDuel() {
       if (e.code === 'Space' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault()
         endTurn()
+        setActivePlayer((p) => (p === 'first' ? 'second' : 'first'))
         return
       }
       if ((e.key === 'd' || e.key === 'D') && !e.ctrlKey && !e.metaKey) {
@@ -305,6 +374,7 @@ export function SimulatorDuel() {
 
   // Game phase
   const activeStore = activePlayer === 'first' ? storeFirst : storeSecond
+  const inactiveStore = activePlayer === 'first' ? storeSecond : storeFirst
   const activeName = activePlayer === 'first' ? firstDeckName : secondDeckName
   const activeOrder = activePlayer === 'first' ? '先行' : '後攻'
   const inactiveName = activePlayer === 'first' ? secondDeckName : firstDeckName
@@ -346,14 +416,12 @@ export function SimulatorDuel() {
             {activeOrder}
           </span>
         </div>
-
-        <div className="duel-inactive-info">
-          <span className="duel-inactive-info__label">待機:</span>
-          <span className="duel-inactive-info__name">{inactiveName}</span>
-          <span className="duel-inactive-info__order">{inactiveOrder}</span>
-        </div>
       </header>
 
+      {/* Opponent's board strip (top, rotated 180°) */}
+      <OppBoardStrip store={inactiveStore} name={inactiveName} order={inactiveOrder} />
+
+      {/* Active player's full board */}
       <div className="duel-board-wrap">
         <GameBoard
           store={activeStore}

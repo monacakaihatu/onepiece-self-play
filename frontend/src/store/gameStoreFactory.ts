@@ -27,6 +27,7 @@ function buildDonTokens(storeId: string, count: number): DonToken[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `${storeId}-don-${i}`,
     used: false,
+    rested: false,
     attachedTo: undefined,
   }))
 }
@@ -95,6 +96,7 @@ export interface GameStore {
   // Don!!
   gainDon: (count?: number) => void
   removeDon: () => void
+  toggleRestDon: (donId: string) => void
   attachDon: (donId: string, instanceId: string) => void
   detachDon: (donId: string) => void
   detachAllDon: (instanceId: string) => void
@@ -536,8 +538,17 @@ export function createGameStore() {
       set((s) => {
         const target = [...s.donTokens].reverse().find((d) => d.used && !d.attachedTo)
         if (!target) return {}
-        return { donTokens: s.donTokens.map((d) => d.id === target.id ? { ...d, used: false } : d) }
+        return { donTokens: s.donTokens.map((d) => d.id === target.id ? { ...d, used: false, rested: false } : d) }
       })
+    },
+
+    toggleRestDon: (donId) => {
+      get()._pushSnapshot()
+      set((s) => ({
+        donTokens: s.donTokens.map((d) =>
+          d.id === donId && d.used && !d.attachedTo ? { ...d, rested: !d.rested } : d
+        ),
+      }))
     },
 
     attachDon: (donId, instanceId) => {
@@ -631,8 +642,8 @@ export function createGameStore() {
         return {
           turnNumber: s.turnNumber + 1,
           cards: { ...s.cards, ...cardUpdates },
-          // Detach all DON from cards, but keep them in the pool (used stays true)
-          donTokens: s.donTokens.map((d) => ({ ...d, attachedTo: undefined })),
+          // Detach all DON from cards, keep them in pool; unrest non-attached DON
+          donTokens: s.donTokens.map((d) => ({ ...d, attachedTo: undefined, rested: false })),
           deckTopModal: null,
         }
       })

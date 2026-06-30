@@ -25,6 +25,7 @@ export interface GameCard {
 export interface DonToken {
   id: string
   used: boolean
+  rested: boolean
   attachedTo?: string
 }
 
