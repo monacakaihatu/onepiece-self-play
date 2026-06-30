@@ -94,6 +94,7 @@ export interface GameStore {
 
   // Don!!
   gainDon: (count?: number) => void
+  removeDon: () => void
   attachDon: (donId: string, instanceId: string) => void
   detachDon: (donId: string) => void
   detachAllDon: (instanceId: string) => void
@@ -527,6 +528,15 @@ export function createGameStore() {
           return d
         })
         return { donTokens: newTokens }
+      })
+    },
+
+    removeDon: () => {
+      get()._pushSnapshot()
+      set((s) => {
+        const target = [...s.donTokens].reverse().find((d) => d.used && !d.attachedTo)
+        if (!target) return {}
+        return { donTokens: s.donTokens.map((d) => d.id === target.id ? { ...d, used: false } : d) }
       })
     },
 

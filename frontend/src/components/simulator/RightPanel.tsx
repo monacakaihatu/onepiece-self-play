@@ -2,7 +2,6 @@ import { useDroppable } from '@dnd-kit/core'
 import { AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../context/GameStoreContext'
 import { GameCardDisplay } from './GameCardDisplay'
-import { DonZone } from './DonZone'
 
 function HandList() {
   const cards = useGameStore((s) => s.cards)
@@ -83,7 +82,6 @@ export function RightPanel() {
   return (
     <aside className="sim-right-panel">
       <HandList />
-      <DonZone />
       <Controls />
     </aside>
   )

@@ -2,6 +2,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { AnimatePresence } from 'framer-motion'
 import { useGameStore } from '../../context/GameStoreContext'
 import { GameCardDisplay } from './GameCardDisplay'
+import { DonZone } from './DonZone'
 
 function LeaderArea() {
   const cards = useGameStore((s) => s.cards)
@@ -94,6 +95,7 @@ export function CenterField() {
         <StageArea />
       </div>
       <PlayerField />
+      <DonZone />
     </main>
   )
 }

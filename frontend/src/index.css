@@ -1918,75 +1918,80 @@ body {
 .sim-don-zone {
   background: var(--sim-panel2);
   border: 1px solid var(--sim-border);
-  border-radius: 8px;
-  padding: 8px;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 6px 10px 8px;
   flex-shrink: 0;
+  transition: background 0.15s;
+}
+.sim-don-zone--over {
+  background: var(--sim-zone-over);
 }
 .sim-don-zone__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   margin-bottom: 6px;
 }
 .sim-don-zone__title {
   font-size: 12px;
   font-weight: 700;
   color: var(--sim-don-available);
+  white-space: nowrap;
+}
+.sim-don-zone__count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+}
+.sim-don-zone__btns {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
 }
 .sim-don-zone__btn {
-  font-size: 11px;
-  padding: 2px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 1px 10px;
+  line-height: 1.4;
 }
-.sim-don-pool {
+.sim-don-count__max {
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 400;
+}
+.sim-don-cards {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 6px;
-  border-radius: 6px;
-  border: 1px dashed var(--sim-border);
-  min-height: 48px;
-  transition: background 0.15s;
+  min-height: 52px;
+  align-items: flex-end;
 }
-.sim-don-pool--over {
-  background: var(--sim-zone-over);
-}
-.sim-don-token {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s;
+.sim-don-card {
+  width: 36px;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  border: 1.5px solid var(--sim-don-available);
+  transition: opacity 0.15s, border-color 0.15s;
   flex-shrink: 0;
 }
-.sim-don-token--available {
-  background: var(--sim-don-available);
-  border-color: #d97706;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
+.sim-don-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-.sim-don-token--used {
-  background: var(--sim-don-used);
-  border-color: #4b5563;
+.sim-don-card--attached {
+  opacity: 0.35;
+  border-color: var(--sim-don-attached);
 }
-.sim-don-token--attached {
-  background: var(--sim-don-attached);
-  border-color: #059669;
+.sim-don-empty {
+  font-size: 11px;
+  color: var(--text3);
+  align-self: center;
 }
-.sim-don-zone__counts {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
-  justify-content: center;
-}
-.sim-don-count {
-  font-size: 20px;
-  font-weight: 800;
-}
-.sim-don-count--available { color: var(--sim-don-available); }
-.sim-don-count--total { color: var(--text2); }
-.sim-don-count__sep { color: var(--text2); font-size: 14px; }
-.sim-don-count__max { color: var(--text3); font-size: 10px; }
 
 /* Deck peek buttons */
 .sim-deck-peek-buttons {
