@@ -101,26 +101,6 @@ function GraveyardZone() {
   )
 }
 
-function ExcludedZone() {
-  const cards = useGameStore((s) => s.cards)
-  const { setNodeRef, isOver } = useDroppable({ id: 'excluded' })
-  const exCards = Object.values(cards).filter((c) => c.zone === 'excluded')
-
-  return (
-    <div className="sim-left-zone">
-      <div className="sim-zone-label">除外 ({exCards.length})</div>
-      <div ref={setNodeRef} className={`sim-excluded-area ${isOver ? 'sim-zone--over' : ''}`}>
-        {exCards.length === 0 && <div className="sim-zone-empty">なし</div>}
-        {exCards
-          .slice(-3)
-          .reverse()
-          .map((card) => (
-            <GameCardDisplay key={card.instanceId} gameCard={card} size="sm" />
-          ))}
-      </div>
-    </div>
-  )
-}
 
 function LifeZone() {
   const lifeCards = useGameStore((s) => s.lifeCards)
@@ -150,7 +130,6 @@ export function LeftPanel() {
       <DeckZone />
       <LifeZone />
       <GraveyardZone />
-      <ExcludedZone />
     </aside>
   )
 }

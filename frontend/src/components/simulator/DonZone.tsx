@@ -1,5 +1,35 @@
-import { useDroppable } from '@dnd-kit/core'
+import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { useGameStore } from '../../context/GameStoreContext'
+import type { DonToken } from '../../types/game'
+
+function DonCard({ token, onRest }: { token: DonToken; onRest: () => void }) {
+  const isAttached = !!token.attachedTo
+  const isRested = token.rested && !isAttached
+
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `don-${token.id}`,
+    data: { type: 'don', donId: token.id },
+    disabled: isAttached,
+  })
+
+  const dragStyle = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 500 }
+    : undefined
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`sim-don-card${isAttached ? ' sim-don-card--attached' : ''}${isRested ? ' sim-don-card--rested' : ''}${isDragging ? ' sim-don-card--dragging' : ''}`}
+      title={isAttached ? '付与中' : 'ドラッグで付与 / クリックでレスト'}
+      onClick={() => !isAttached && onRest()}
+      style={dragStyle}
+    >
+      <img src="/Don.jpeg" alt="DON!!" draggable={false} />
+    </div>
+  )
+}
 
 export function DonZone() {
   const donTokens = useGameStore((s) => s.donTokens)
@@ -47,21 +77,13 @@ export function DonZone() {
       </div>
 
       <div className="sim-don-cards">
-        {gainedTokens.map((token) => {
-          const isAttached = !!token.attachedTo
-          const isRested = token.rested && !isAttached
-          return (
-            <div
-              key={token.id}
-              className={`sim-don-card ${isAttached ? 'sim-don-card--attached' : ''} ${isRested ? 'sim-don-card--rested' : ''}`}
-              title={isAttached ? '付与中' : isRested ? 'レスト中（クリックで解除）' : 'クリックでレスト'}
-              onClick={() => !isAttached && toggleRestDon(token.id)}
-              style={{ cursor: isAttached ? 'default' : 'pointer' }}
-            >
-              <img src="/Don.jpeg" alt="DON!!" draggable={false} />
-            </div>
-          )
-        })}
+        {gainedTokens.map((token) => (
+          <DonCard
+            key={token.id}
+            token={token}
+            onRest={() => toggleRestDon(token.id)}
+          />
+        ))}
         {gainedCount === 0 && (
           <div className="sim-don-empty">ドン!!なし</div>
         )}

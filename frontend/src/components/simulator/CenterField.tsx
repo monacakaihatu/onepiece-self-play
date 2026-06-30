@@ -1,6 +1,9 @@
 import { useDroppable } from '@dnd-kit/core'
 import { AnimatePresence } from 'framer-motion'
+import { useStore } from 'zustand'
 import { useGameStore } from '../../context/GameStoreContext'
+import { useInactiveStore } from '../../context/InactiveStoreContext'
+import type { GameStoreApi } from '../../store/gameStoreFactory'
 import { GameCardDisplay } from './GameCardDisplay'
 import { DonZone } from './DonZone'
 
@@ -14,7 +17,7 @@ function LeaderArea() {
       <div className="sim-zone-label">リーダー</div>
       {leader ? (
         <div className="sim-leader-card">
-          <GameCardDisplay gameCard={leader} size="lg" showPower={true} />
+          <GameCardDisplay gameCard={leader} size="lg" showPower={true} droppable={true} />
           {leader.card.life && <div className="sim-leader-life">LIFE: {leader.card.life}</div>}
         </div>
       ) : (
@@ -55,7 +58,7 @@ function PlayerField() {
       <div className="sim-field-cards">
         <AnimatePresence>
           {fieldCards.map((card) => (
-            <GameCardDisplay key={card.instanceId} gameCard={card} size="md" showPower={true} />
+            <GameCardDisplay key={card.instanceId} gameCard={card} size="md" showPower={true} droppable={true} />
           ))}
         </AnimatePresence>
         {fieldCards.length === 0 && (
@@ -66,7 +69,40 @@ function PlayerField() {
   )
 }
 
-function OppField() {
+function SyncedOppField({ store }: { store: GameStoreApi }) {
+  const cards = useStore(store, (s) => s.cards)
+  const fieldCards = Object.values(cards)
+    .filter((c) => c.zone === 'field')
+    .sort((a, b) => (a.fieldIndex ?? 0) - (b.fieldIndex ?? 0))
+
+  return (
+    <div className="sim-opp-field sim-opp-field--synced">
+      <div className="sim-zone-label">相手キャラ <span className="sim-opp-field__sync-badge">同期中</span></div>
+      <div className="sim-field-cards">
+        {fieldCards.map((card) => (
+          <div
+            key={card.instanceId}
+            className={`sim-opp-sync-card ${card.rested ? 'sim-opp-sync-card--rested' : ''}`}
+            title={card.card.name ?? card.card.name_en ?? card.card.id}
+          >
+            <img
+              src={`/image/${card.card.id}`}
+              alt={card.card.name ?? ''}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
+              draggable={false}
+            />
+            {card.donAttached > 0 && (
+              <span className="sim-opp-sync-card__don">+{card.donAttached}</span>
+            )}
+          </div>
+        ))}
+        {fieldCards.length === 0 && <div className="sim-field-empty">キャラなし</div>}
+      </div>
+    </div>
+  )
+}
+
+function PracticeOppField() {
   const cards = useGameStore((s) => s.cards)
   const { setNodeRef, isOver } = useDroppable({ id: 'opp_field' })
   const oppCards = Object.values(cards).filter((c) => c.zone === 'opp_field')
@@ -84,6 +120,11 @@ function OppField() {
       </div>
     </div>
   )
+}
+
+function OppField() {
+  const inactiveStore = useInactiveStore()
+  return inactiveStore ? <SyncedOppField store={inactiveStore} /> : <PracticeOppField />
 }
 
 export function CenterField() {

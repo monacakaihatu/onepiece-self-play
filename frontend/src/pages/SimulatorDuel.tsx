@@ -13,6 +13,7 @@ import { useStore } from 'zustand'
 import { createGameStore } from '../store/gameStoreFactory'
 import type { GameStoreApi } from '../store/gameStoreFactory'
 import { GameStoreProvider } from '../context/GameStoreContext'
+import { InactiveStoreProvider } from '../context/InactiveStoreContext'
 import type { ZoneId, GameCard } from '../types/game'
 import { LeftPanel } from '../components/simulator/LeftPanel'
 import { CenterField } from '../components/simulator/CenterField'
@@ -24,7 +25,7 @@ import { DeckTopModal } from '../components/simulator/DeckTopModal'
 
 const VALID_ZONES: ZoneId[] = [
   'deck', 'hand', 'leader', 'field', 'stage',
-  'graveyard', 'excluded', 'life', 'opp_field',
+  'graveyard', 'life', 'opp_field',
 ]
 
 // Simple card image for mulligan screen (no dnd)
@@ -176,9 +177,11 @@ function OppBoardStrip({ store, name, order }: { store: GameStoreApi; name: stri
 
 function GameBoard({
   store,
+  inactiveStore,
   onDragEnd,
 }: {
   store: GameStoreApi
+  inactiveStore: GameStoreApi | null
   onDragEnd: (e: DragEndEvent) => void
 }) {
   const sensors = useSensors(
@@ -188,19 +191,21 @@ function GameBoard({
 
   return (
     <GameStoreProvider store={store}>
-      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-        <div className="sim-root" onContextMenu={(e) => e.preventDefault()}>
-          <PhaseBar />
-          <div className="sim-board">
-            <LeftPanel />
-            <CenterField />
-            <RightPanel />
+      <InactiveStoreProvider value={inactiveStore}>
+        <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+          <div className="sim-root" onContextMenu={(e) => e.preventDefault()}>
+            <PhaseBar />
+            <div className="sim-board">
+              <LeftPanel />
+              <CenterField />
+              <RightPanel />
+            </div>
+            <ContextMenu />
+            <CardPreviewOverlay />
+            <DeckTopModal />
           </div>
-          <ContextMenu />
-          <CardPreviewOverlay />
-          <DeckTopModal />
-        </div>
-      </DndContext>
+        </DndContext>
+      </InactiveStoreProvider>
     </GameStoreProvider>
   )
 }
@@ -296,26 +301,61 @@ export function SimulatorDuel() {
   const makeDragHandler = (store: GameStoreApi) => (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) return
-    const instanceId = active.id as string
 
-    if (over.id === 'don_return') {
-      store.getState().returnDon(instanceId)
+    const activeId = active.id as string
+    const overId = over.id.toString()
+    const activeData = active.data.current as { type?: string; donId?: string; zone?: ZoneId } | undefined
+
+    // Dropped on a card (drop-{instanceId}) — DON attach or field reorder
+    if (overId.startsWith('drop-')) {
+      const targetInstanceId = overId.slice(5)
+
+      if (activeData?.type === 'don' && activeData.donId) {
+        store.getState().attachDon(activeData.donId, targetInstanceId)
+        return
+      }
+      if (activeData?.type === 'don') return
+
+      const targetCard = store.getState().cards[targetInstanceId]
+
+      if (activeData?.zone === 'field' && targetCard?.zone === 'field' && targetInstanceId !== activeId) {
+        store.getState().reorderField(activeId, targetInstanceId)
+        return
+      }
+
+      // Fall through: treat as dropping on that card's zone
+      if (targetCard && targetInstanceId !== activeId && VALID_ZONES.includes(targetCard.zone)) {
+        const toZone = targetCard.zone
+        const opts: { faceUp?: boolean; toTop?: boolean } = {}
+        if (toZone === 'hand') opts.faceUp = true
+        if (toZone === 'graveyard') opts.faceUp = true
+        store.getState().moveCard(activeId, toZone, opts)
+      }
       return
     }
 
-    const toZone = over.id as ZoneId
+    // Return card DON to pool
+    if (overId === 'don_return') {
+      if (activeData?.type !== 'don') store.getState().returnDon(activeId)
+      return
+    }
+
+    // DON dropped on zone: ignore
+    if (activeData?.type === 'don') return
+
+    // Regular zone drop
+    const toZone = overId as ZoneId
     if (!VALID_ZONES.includes(toZone)) return
 
-    const sourceZone = (active.data.current as { zone?: ZoneId })?.zone
+    const sourceZone = activeData?.zone
     if (sourceZone === toZone && toZone !== 'field') return
 
     const opts: { faceUp?: boolean; toTop?: boolean } = {}
     if (toZone === 'deck') opts.toTop = false
     if (toZone === 'hand') opts.faceUp = true
     if (toZone === 'graveyard') opts.faceUp = true
-    if (toZone === 'excluded') opts.faceUp = true
 
-    store.getState().moveCard(instanceId, toZone, opts)
+    store.getState().moveCard(activeId, toZone, opts)
   }
 
   const bothLoading = !firstInitialized || !secondInitialized
@@ -425,6 +465,7 @@ export function SimulatorDuel() {
       <div className="duel-board-wrap">
         <GameBoard
           store={activeStore}
+          inactiveStore={inactiveStore}
           onDragEnd={makeDragHandler(activeStore)}
         />
       </div>

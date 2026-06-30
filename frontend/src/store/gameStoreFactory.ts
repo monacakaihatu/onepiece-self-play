@@ -93,6 +93,9 @@ export interface GameStore {
   closeDeckTopModal: () => void
   commitDeckTopModal: (handIds: string[], gravIds: string[], deckReturnIds: string[], deckReturnDest: 'top' | 'bottom') => void
 
+  // Field
+  reorderField: (fromId: string, toId: string) => void
+
   // Don!!
   gainDon: (count?: number) => void
   removeDon: () => void
@@ -517,6 +520,22 @@ export function createGameStore() {
           cards: { ...s.cards, ...updates },
           deckOrder: newDeckOrder,
           deckTopModal: null,
+        }
+      })
+    },
+
+    reorderField: (fromId, toId) => {
+      get()._pushSnapshot()
+      set((s) => {
+        const from = s.cards[fromId]
+        const to = s.cards[toId]
+        if (!from || !to || from.zone !== 'field' || to.zone !== 'field') return {}
+        return {
+          cards: {
+            ...s.cards,
+            [fromId]: { ...from, fieldIndex: to.fieldIndex },
+            [toId]: { ...to, fieldIndex: from.fieldIndex },
+          },
         }
       })
     },

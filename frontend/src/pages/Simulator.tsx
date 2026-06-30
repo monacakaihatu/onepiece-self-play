@@ -23,7 +23,7 @@ import { DeckTopModal } from '../components/simulator/DeckTopModal'
 
 const VALID_ZONES: ZoneId[] = [
   'deck', 'hand', 'leader', 'field', 'stage',
-  'graveyard', 'excluded', 'life', 'opp_field',
+  'graveyard', 'life', 'opp_field',
 ]
 
 export function Simulator() {
@@ -109,7 +109,6 @@ export function Simulator() {
     if (toZone === 'deck') opts.toTop = false
     if (toZone === 'hand') opts.faceUp = true
     if (toZone === 'graveyard') opts.faceUp = true
-    if (toZone === 'excluded') opts.faceUp = true
 
     moveCard(instanceId, toZone, opts)
   }

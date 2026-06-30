@@ -7,7 +7,6 @@ export type ZoneId =
   | 'field'
   | 'stage'
   | 'graveyard'
-  | 'excluded'
   | 'life'
   | 'opp_field'
 

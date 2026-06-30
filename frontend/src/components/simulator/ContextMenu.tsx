@@ -8,7 +8,6 @@ const MOVE_ZONES: { label: string; zone: ZoneId }[] = [
   { label: '墓地へ', zone: 'graveyard' },
   { label: '山札トップへ', zone: 'deck' },
   { label: 'ライフへ', zone: 'life' },
-  { label: '除外へ', zone: 'excluded' },
 ]
 
 export function ContextMenu() {
