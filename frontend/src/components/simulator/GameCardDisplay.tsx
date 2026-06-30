@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { useDraggable } from '@dnd-kit/core'
+import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { motion } from 'framer-motion'
 import { useGameStore } from '../../context/GameStoreContext'
 import type { GameCard } from '../../types/game'
@@ -11,6 +11,7 @@ interface Props {
   style?: React.CSSProperties
   className?: string
   disableDrag?: boolean
+  droppable?: boolean
 }
 
 const SIZE_MAP = {
@@ -26,17 +27,28 @@ export function GameCardDisplay({
   style,
   className = '',
   disableDrag = false,
+  droppable = false,
 }: Props) {
   const { instanceId, card, rested, faceUp, powerMod, donAttached } = gameCard
   const setPreview = useGameStore((s) => s.setPreview)
   const openContextMenu = useGameStore((s) => s.openContextMenu)
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef: setDragRef, transform, isDragging } = useDraggable({
     id: instanceId,
     disabled: disableDrag,
     data: { zone: gameCard.zone },
   })
+
+  const { setNodeRef: setDropRef, isOver: isDropOver } = useDroppable({
+    id: `drop-${instanceId}`,
+    disabled: !droppable,
+  })
+
+  const setNodeRef = (el: HTMLElement | null) => {
+    setDragRef(el)
+    if (droppable) setDropRef(el)
+  }
 
   const { width, height } = SIZE_MAP[size]
   const displayPower = card.power !== null ? card.power + powerMod : null
@@ -92,7 +104,7 @@ export function GameCardDisplay({
       layout
       layoutId={instanceId}
       ref={setNodeRef}
-      className={`sim-card ${getColorClass()} ${rested ? 'sim-card--rested' : ''} ${isDragging ? 'sim-card--dragging' : ''} ${className}`}
+      className={`sim-card ${getColorClass()} ${rested ? 'sim-card--rested' : ''} ${isDragging ? 'sim-card--dragging' : ''} ${isDropOver ? 'sim-card--drop-over' : ''} ${className}`}
       style={{ width, height, ...dragStyle, ...style }}
       {...attributes}
       {...listeners}

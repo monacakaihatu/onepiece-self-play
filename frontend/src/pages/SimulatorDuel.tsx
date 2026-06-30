@@ -13,6 +13,7 @@ import { useStore } from 'zustand'
 import { createGameStore } from '../store/gameStoreFactory'
 import type { GameStoreApi } from '../store/gameStoreFactory'
 import { GameStoreProvider } from '../context/GameStoreContext'
+import { InactiveStoreProvider } from '../context/InactiveStoreContext'
 import type { ZoneId, GameCard } from '../types/game'
 import { LeftPanel } from '../components/simulator/LeftPanel'
 import { CenterField } from '../components/simulator/CenterField'
@@ -20,10 +21,11 @@ import { RightPanel } from '../components/simulator/RightPanel'
 import { PhaseBar } from '../components/simulator/PhaseBar'
 import { ContextMenu } from '../components/simulator/ContextMenu'
 import { CardPreviewOverlay } from '../components/simulator/CardPreviewOverlay'
+import { DeckTopModal } from '../components/simulator/DeckTopModal'
 
 const VALID_ZONES: ZoneId[] = [
   'deck', 'hand', 'leader', 'field', 'stage',
-  'graveyard', 'excluded', 'life', 'opp_field',
+  'graveyard', 'life', 'opp_field',
 ]
 
 // Simple card image for mulligan screen (no dnd)
@@ -105,11 +107,81 @@ function MulliganPanel({
   )
 }
 
+// Read-only strip showing opponent's field (rotated 180°)
+function OppBoardStrip({ store, name, order }: { store: GameStoreApi; name: string; order: '先行' | '後攻' }) {
+  const cards = useStore(store, (s) => s.cards)
+  const donTokens = useStore(store, (s) => s.donTokens)
+  const turnNumber = useStore(store, (s) => s.turnNumber)
+
+  const handCount = Object.values(cards).filter((c) => c.zone === 'hand').length
+  const fieldCards = Object.values(cards)
+    .filter((c) => c.zone === 'field')
+    .sort((a, b) => (a.fieldIndex ?? 0) - (b.fieldIndex ?? 0))
+  const leader = Object.values(cards).find((c) => c.zone === 'leader')
+  const deckCount = Object.values(cards).filter((c) => c.zone === 'deck').length
+  const lifeCount = Object.values(cards).filter((c) => c.zone === 'life').length
+
+  const gainedDon = donTokens.filter((d) => d.used || d.attachedTo).length
+  const availDon = donTokens.filter((d) => d.used && !d.attachedTo && !d.rested).length
+
+  return (
+    <div className="opp-strip">
+      <div className="opp-strip__inner">
+        {/* DON area */}
+        <div className="opp-strip__don">
+          <img src="/Don.jpeg" alt="DON" className="opp-strip__don-img" />
+          <span className="opp-strip__don-count">{availDon}/{gainedDon}</span>
+        </div>
+
+        {/* Leader */}
+        <div className="opp-strip__leader">
+          {leader ? (
+            <img
+              src={`/image/${leader.card.id}`}
+              alt={leader.card.name ?? ''}
+              className={`opp-strip__card ${leader.rested ? 'opp-strip__card--rested' : ''}`}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
+            />
+          ) : (
+            <div className="opp-strip__card opp-strip__card--empty" />
+          )}
+        </div>
+
+        {/* Character area */}
+        <div className="opp-strip__chars">
+          {fieldCards.map((card) => (
+            <img
+              key={card.instanceId}
+              src={`/image/${card.card.id}`}
+              alt={card.card.name ?? ''}
+              className={`opp-strip__card ${card.rested ? 'opp-strip__card--rested' : ''}`}
+              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png' }}
+            />
+          ))}
+          {fieldCards.length === 0 && <span className="opp-strip__empty">キャラなし</span>}
+        </div>
+
+        {/* Info */}
+        <div className="opp-strip__info">
+          <span className={`opp-strip__order opp-strip__order--${order === '先行' ? 'first' : 'second'}`}>{order}</span>
+          <span className="opp-strip__name">{name}</span>
+          <span className="opp-strip__stat">T{turnNumber}</span>
+          <span className="opp-strip__stat">手札 {handCount}</span>
+          <span className="opp-strip__stat">山札 {deckCount}</span>
+          <span className="opp-strip__stat">ライフ {lifeCount}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function GameBoard({
   store,
+  inactiveStore,
   onDragEnd,
 }: {
   store: GameStoreApi
+  inactiveStore: GameStoreApi | null
   onDragEnd: (e: DragEndEvent) => void
 }) {
   const sensors = useSensors(
@@ -119,18 +191,21 @@ function GameBoard({
 
   return (
     <GameStoreProvider store={store}>
-      <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-        <div className="sim-root" onContextMenu={(e) => e.preventDefault()}>
-          <PhaseBar />
-          <div className="sim-board">
-            <LeftPanel />
-            <CenterField />
-            <RightPanel />
+      <InactiveStoreProvider value={inactiveStore}>
+        <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+          <div className="sim-root" onContextMenu={(e) => e.preventDefault()}>
+            <PhaseBar />
+            <div className="sim-board">
+              <LeftPanel />
+              <CenterField />
+              <RightPanel />
+            </div>
+            <ContextMenu />
+            <CardPreviewOverlay />
+            <DeckTopModal />
           </div>
-          <ContextMenu />
-          <CardPreviewOverlay />
-        </div>
-      </DndContext>
+        </DndContext>
+      </InactiveStoreProvider>
     </GameStoreProvider>
   )
 }
@@ -175,7 +250,7 @@ export function SimulatorDuel() {
     }
   }, [keptFirst, keptSecond])
 
-  // Keyboard shortcuts for active player
+  // Keyboard shortcuts for active player; Space auto-switches player
   useEffect(() => {
     if (phase !== 'game') return
     const activeStore = activePlayer === 'first' ? storeFirst : storeSecond
@@ -184,12 +259,16 @@ export function SimulatorDuel() {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
 
-      const { nextPhase, drawCard, refreshAll, undo, redo, closeContextMenu, setPreview } =
+      const { endTurn, drawCard, refreshAll, undo, redo, closeContextMenu, setPreview, deckTopModal } =
         activeStore.getState()
+
+      // Block most actions while the deck-peek modal is open
+      if (deckTopModal) return
 
       if (e.code === 'Space' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault()
-        nextPhase()
+        endTurn()
+        setActivePlayer((p) => (p === 'first' ? 'second' : 'first'))
         return
       }
       if ((e.key === 'd' || e.key === 'D') && !e.ctrlKey && !e.metaKey) {
@@ -222,26 +301,61 @@ export function SimulatorDuel() {
   const makeDragHandler = (store: GameStoreApi) => (event: DragEndEvent) => {
     const { active, over } = event
     if (!over) return
-    const instanceId = active.id as string
 
-    if (over.id === 'don_return') {
-      store.getState().returnDon(instanceId)
+    const activeId = active.id as string
+    const overId = over.id.toString()
+    const activeData = active.data.current as { type?: string; donId?: string; zone?: ZoneId } | undefined
+
+    // Dropped on a card (drop-{instanceId}) — DON attach or field reorder
+    if (overId.startsWith('drop-')) {
+      const targetInstanceId = overId.slice(5)
+
+      if (activeData?.type === 'don' && activeData.donId) {
+        store.getState().attachDon(activeData.donId, targetInstanceId)
+        return
+      }
+      if (activeData?.type === 'don') return
+
+      const targetCard = store.getState().cards[targetInstanceId]
+
+      if (activeData?.zone === 'field' && targetCard?.zone === 'field' && targetInstanceId !== activeId) {
+        store.getState().reorderField(activeId, targetInstanceId)
+        return
+      }
+
+      // Fall through: treat as dropping on that card's zone
+      if (targetCard && targetInstanceId !== activeId && VALID_ZONES.includes(targetCard.zone)) {
+        const toZone = targetCard.zone
+        const opts: { faceUp?: boolean; toTop?: boolean } = {}
+        if (toZone === 'hand') opts.faceUp = true
+        if (toZone === 'graveyard') opts.faceUp = true
+        store.getState().moveCard(activeId, toZone, opts)
+      }
       return
     }
 
-    const toZone = over.id as ZoneId
+    // Return card DON to pool
+    if (overId === 'don_return') {
+      if (activeData?.type !== 'don') store.getState().returnDon(activeId)
+      return
+    }
+
+    // DON dropped on zone: ignore
+    if (activeData?.type === 'don') return
+
+    // Regular zone drop
+    const toZone = overId as ZoneId
     if (!VALID_ZONES.includes(toZone)) return
 
-    const sourceZone = (active.data.current as { zone?: ZoneId })?.zone
+    const sourceZone = activeData?.zone
     if (sourceZone === toZone && toZone !== 'field') return
 
     const opts: { faceUp?: boolean; toTop?: boolean } = {}
     if (toZone === 'deck') opts.toTop = false
     if (toZone === 'hand') opts.faceUp = true
     if (toZone === 'graveyard') opts.faceUp = true
-    if (toZone === 'excluded') opts.faceUp = true
 
-    store.getState().moveCard(instanceId, toZone, opts)
+    store.getState().moveCard(activeId, toZone, opts)
   }
 
   const bothLoading = !firstInitialized || !secondInitialized
@@ -300,6 +414,7 @@ export function SimulatorDuel() {
 
   // Game phase
   const activeStore = activePlayer === 'first' ? storeFirst : storeSecond
+  const inactiveStore = activePlayer === 'first' ? storeSecond : storeFirst
   const activeName = activePlayer === 'first' ? firstDeckName : secondDeckName
   const activeOrder = activePlayer === 'first' ? '先行' : '後攻'
   const inactiveName = activePlayer === 'first' ? secondDeckName : firstDeckName
@@ -341,17 +456,16 @@ export function SimulatorDuel() {
             {activeOrder}
           </span>
         </div>
-
-        <div className="duel-inactive-info">
-          <span className="duel-inactive-info__label">待機:</span>
-          <span className="duel-inactive-info__name">{inactiveName}</span>
-          <span className="duel-inactive-info__order">{inactiveOrder}</span>
-        </div>
       </header>
 
+      {/* Opponent's board strip (top, rotated 180°) */}
+      <OppBoardStrip store={inactiveStore} name={inactiveName} order={inactiveOrder} />
+
+      {/* Active player's full board */}
       <div className="duel-board-wrap">
         <GameBoard
           store={activeStore}
+          inactiveStore={inactiveStore}
           onDragEnd={makeDragHandler(activeStore)}
         />
       </div>

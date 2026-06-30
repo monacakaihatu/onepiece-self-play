@@ -5,13 +5,16 @@ import { GameCardDisplay } from './GameCardDisplay'
 
 function DeckZone() {
   const cards = useGameStore((s) => s.cards)
+  const deckOrder = useGameStore((s) => s.deckOrder)
   const drawCard = useGameStore((s) => s.drawCard)
   const shuffleDeck = useGameStore((s) => s.shuffleDeck)
+  const openDeckTopModal = useGameStore((s) => s.openDeckTopModal)
   const { setNodeRef, isOver } = useDroppable({ id: 'deck' })
 
   const deckCards = Object.values(cards).filter((c) => c.zone === 'deck')
   const count = deckCards.length
-  const topCard = deckCards[0]
+  const topCardId = deckOrder[0]
+  const topCard = topCardId ? cards[topCardId] : undefined
 
   return (
     <div className="sim-left-zone">
@@ -35,6 +38,34 @@ function DeckZone() {
       <button className="btn btn--sm sim-left-btn" onClick={() => drawCard(1)}>
         ドロー [D]
       </button>
+
+      <div className="sim-deck-peek-buttons">
+        <div className="sim-deck-peek-label">確認</div>
+        <button
+          className="btn btn--sm sim-left-btn"
+          onClick={() => openDeckTopModal(2)}
+          disabled={count < 2}
+          title="デッキトップ2枚を確認"
+        >
+          上2枚
+        </button>
+        <button
+          className="btn btn--sm sim-left-btn"
+          onClick={() => openDeckTopModal(3)}
+          disabled={count < 3}
+          title="デッキトップ3枚を確認"
+        >
+          上3枚
+        </button>
+        <button
+          className="btn btn--sm sim-left-btn"
+          onClick={() => openDeckTopModal(5)}
+          disabled={count < 5}
+          title="デッキトップ5枚を確認"
+        >
+          上5枚
+        </button>
+      </div>
     </div>
   )
 }
@@ -70,26 +101,6 @@ function GraveyardZone() {
   )
 }
 
-function ExcludedZone() {
-  const cards = useGameStore((s) => s.cards)
-  const { setNodeRef, isOver } = useDroppable({ id: 'excluded' })
-  const exCards = Object.values(cards).filter((c) => c.zone === 'excluded')
-
-  return (
-    <div className="sim-left-zone">
-      <div className="sim-zone-label">除外 ({exCards.length})</div>
-      <div ref={setNodeRef} className={`sim-excluded-area ${isOver ? 'sim-zone--over' : ''}`}>
-        {exCards.length === 0 && <div className="sim-zone-empty">なし</div>}
-        {exCards
-          .slice(-3)
-          .reverse()
-          .map((card) => (
-            <GameCardDisplay key={card.instanceId} gameCard={card} size="sm" />
-          ))}
-      </div>
-    </div>
-  )
-}
 
 function LifeZone() {
   const lifeCards = useGameStore((s) => s.lifeCards)
@@ -119,7 +130,6 @@ export function LeftPanel() {
       <DeckZone />
       <LifeZone />
       <GraveyardZone />
-      <ExcludedZone />
     </aside>
   )
 }

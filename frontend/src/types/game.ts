@@ -7,7 +7,6 @@ export type ZoneId =
   | 'field'
   | 'stage'
   | 'graveyard'
-  | 'excluded'
   | 'life'
   | 'opp_field'
 
@@ -22,21 +21,15 @@ export interface GameCard {
   fieldIndex?: number
 }
 
-export type GamePhase = 'refresh' | 'draw' | 'don' | 'main' | 'battle' | 'end'
-
-export const PHASE_LABELS: Record<GamePhase, string> = {
-  refresh: 'リフレッシュ',
-  draw: 'ドロー',
-  don: 'ドン!!',
-  main: 'メイン',
-  battle: 'バトル',
-  end: 'エンド',
-}
-
 export interface DonToken {
   id: string
   used: boolean
+  rested: boolean
   attachedTo?: string
+}
+
+export interface DeckTopModal {
+  peekedIds: string[]
 }
 
 export interface GameSnapshot {
@@ -45,5 +38,4 @@ export interface GameSnapshot {
   lifeCards: string[]
   deckOrder: string[]
   turnNumber: number
-  phase: GamePhase
 }
